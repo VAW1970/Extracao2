@@ -118,12 +118,10 @@ def get_llm_provider(testing: bool = False) -> LLMProviderBase:
                 )
             api_key = settings.LLM_API_KEY
             model = settings.LLM_MODEL
-            base_url = None
+            base_url = settings.LLM_BASE_URL
 
-        logger.info(f"Using API provider with model {model}")
-        provider = APIProvider(api_key=api_key, model=model)
-        if base_url:
-            provider.base_url = base_url
+        logger.info(f"Using API provider with model {model} at {base_url}")
+        provider = APIProvider(api_key=api_key, model=model, base_url=base_url)
         return provider
 
     else:
