@@ -1,5 +1,5 @@
 {
-    "buildCommand": "python -m pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput --clear --ignore=__pycache__ --ignore=*.pyc --ignore=*.pyo",
+    "buildCommand": "python manage.py collectstatic --noinput --clear --ignore=__pycache__ --ignore=*.pyc --ignore=*.pyo",
     "build": {
         "env": {
             "DJANGO_SETTINGS_MODULE": "config.settings"
