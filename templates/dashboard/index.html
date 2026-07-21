@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Extracão Contábil{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <p class="subtitle">Controle de extrações, validações e lançamentos</p>
+    </div>
+
+    <!-- Stat Cards Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card gold">
+                <div class="stat-value">{{ total_documentos|default:"0" }}</div>
+                <div class="stat-label">Total de Documentos</div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card warning">
+                <div class="stat-value">{{ pendentes|default:"0" }}</div>
+                <div class="stat-label">Pendentes</div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card success">
+                <div class="stat-value">{{ validados|default:"0" }}</div>
+                <div class="stat-label">Validados</div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card danger">
+                <div class="stat-value">{{ rejeitados|default:"0" }}</div>
+                <div class="stat-label">Rejeitados</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-graph-up"></i> Volume de Documentos (Últimos 30 dias)
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-pie-chart"></i> Por Tipo de Documento
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="tipoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LLM Usage Panel -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-robot"></i> Uso de LLM
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-card info" style="border-left-color: var(--color-info);">
+                                <div class="stat-value" style="font-size: 1.5rem;">
+                                    {{ llm_stats.total_extracoes|default:"0" }}
+                                </div>
+                                <div class="stat-label">Total Extrações</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card warning">
+                                <div class="stat-value" style="font-size: 1.5rem;">
+                                    {% if llm_stats.taxa_precisa_revisao %}
+                                        {% widthratio llm_stats.taxa_precisa_revisao 1 100 %}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </div>
+                                <div class="stat-label">Taxa de Revisão</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card" style="border-left-color: var(--color-slate);">
+                                <div class="stat-value" style="font-size: 1.5rem;">
+                                    {% if provedor_mais_utilizado %}
+                                        {{ provedor_mais_utilizado.provedor_llm_utilizado|upper }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </div>
+                                <div class="stat-label">Provedor Mais Usado</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card" style="border-left-color: var(--color-slate);">
+                                <div class="stat-value" style="font-size: 1.5rem;">
+                                    {% if provedor_mais_utilizado %}
+                                        {{ provedor_mais_utilizado.modelo_llm_utilizado }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </div>
+                                <div class="stat-label">Modelo Mais Usado</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-journal-check"></i> Lançamentos Preparados</span>
+                    <a href="{% url 'dashboard:export_csv' %}" class="btn btn-gold btn-sm">
+                        <i class="bi bi-download"></i> Exportar CSV
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <div class="stat-value" style="font-size: 2rem; font-family: var(--font-display);">
+                                {{ total_lancamentos|default:"0" }}
+                            </div>
+                            <div class="stat-label">Total Lançamentos</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-value" style="font-size: 2rem; font-family: var(--font-display);">
+                                {{ lancamentos_pendentes|default:"0" }}
+                            </div>
+                            <div class="stat-label">Pendentes Exportação</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Documents Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-clock-history"></i> Documentos Recentes</span>
+            <a href="{% url 'documentos:list' %}" class="btn btn-outline-navy btn-sm">
+                Ver todos <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Formato</th>
+                            <th>Status</th>
+                            <th>Data Upload</th>
+                            <th>Extração</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documentos_recentes %}
+                        <tr>
+                            <td><strong>#{{ doc.id }}</strong></td>
+                            <td>{{ doc.get_tipo_documento_display }}</td>
+                            <td>{{ doc.get_formato_arquivo_display }}</td>
+                            <td>
+                                <span class="badge badge-status badge-{{ doc.status }}">
+                                    {{ doc.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ doc.data_upload|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if doc.dados_extraidos %}
+                                    <span class="badge badge-status badge-{{ doc.status }}">
+                                        {% if doc.dados_extraidos.precisa_revisao %}
+                                            <i class="bi bi-exclamation-triangle"></i> Revisão
+                                        {% else %}
+                                            <i class="bi bi-check-circle"></i> OK
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox" style="font-size: 1.5rem;"></i><br>
+                                Nenhum documento encontrado.
+                                <a href="{% url 'documentos:upload' %}">Faça o primeiro upload!</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Timeline Chart
+    const timelineCtx = document.getElementById('timelineChart');
+    if (timelineCtx) {
+        new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: {{ timeline_labels|safe }},
+                datasets: [{
+                    label: 'Documentos',
+                    data: {{ timeline_values|safe }},
+                    borderColor: '#C9A84C',
+                    backgroundColor: 'rgba(201, 168, 76, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#C9A84C',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // Type Distribution Chart
+    const tipoCtx = document.getElementById('tipoChart');
+    if (tipoCtx) {
+        const tipoData = {{ por_tipo|safe }};
+        new Chart(tipoCtx, {
+            type: 'doughnut',
+            data: {
+                labels: tipoData.map(d => d.tipo_documento),
+                datasets: [{
+                    data: tipoData.map(d => d.total),
+                    backgroundColor: ['#C9A84C', '#1B2838', '#16A34A', '#DC2626'],
+                    borderWidth: 0,
+                    hoverOffset: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 16,
+                            usePointStyle: true,
+                            pointStyleWidth: 8,
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

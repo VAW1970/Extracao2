@@ -1,0 +1,30 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Boleto",
+    "description": "Schema de validação para extração de dados de Boleto Bancário",
+    "type": "object",
+    "required": [],
+    "properties": {
+        "linha_digitavel": {
+            "type": ["string", "null"],
+            "description": "Linha digitável do boleto (47 dígitos)"
+        },
+        "valor": {
+            "type": ["string", "null"],
+            "description": "Valor do boleto"
+        },
+        "data_vencimento": {
+            "type": ["string", "null"],
+            "description": "Data de vencimento (YYYY-MM-DD)"
+        },
+        "beneficiario": {
+            "type": ["string", "null"],
+            "description": "Nome do beneficiário/cedente"
+        },
+        "pagador": {
+            "type": ["string", "null"],
+            "description": "Nome do pagador/sacado"
+        }
+    },
+    "additionalProperties": false
+}

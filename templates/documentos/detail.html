@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Documento #{{ documento.id }} — Extracão Contábil{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Documento #{{ documento.id }}</h1>
+            <p class="subtitle">{{ documento.get_tipo_documento_display }} — {{ documento.get_status_display }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if not documento.dados_extraidos %}
+            <form method="post" action="{% url 'documentos:extract' documento.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-gold">
+                    <i class="bi bi-robot"></i> Extrair Dados
+                </button>
+            </form>
+            {% elif documento.dados_extraidos.precisa_revisao %}
+            <form method="post" action="{% url 'documentos:extract' documento.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-navy">
+                    <i class="bi bi-arrow-clockwise"></i> Reprocessar
+                </button>
+            </form>
+            {% endif %}
+            {% if documento.status == 'pendente' and documento.dados_extraidos and not documento.dados_extraidos.precisa_revisao %}
+            <a href="{% url 'validacao:detail' documento.id %}" class="btn btn-gold">
+                <i class="bi bi-check2-square"></i> Validar
+            </a>
+            {% endif %}
+            <a href="{% url 'documentos:list' %}" class="btn btn-outline-navy">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-info-circle"></i> Informações</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Tipo</dt>
+                        <dd class="col-sm-8">{{ documento.get_tipo_documento_display }}</dd>
+
+                        <dt class="col-sm-4">Formato</dt>
+                        <dd class="col-sm-8">{{ documento.get_formato_arquivo_display }}</dd>
+
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge badge-status badge-{{ documento.status }}">
+                                {{ documento.get_status_display }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">Origem</dt>
+                        <dd class="col-sm-8">{{ documento.origem }}</dd>
+
+                        <dt class="col-sm-4">Upload</dt>
+                        <dd class="col-sm-8">{{ documento.data_upload|date:"d/m/Y H:i:s" }}</dd>
+
+                        <dt class="col-sm-4">Arquivo</dt>
+                        <dd class="col-sm-8">
+                            <small class="text-muted">{{ documento.arquivo_original.name }}</small>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-robot"></i> Dados Extraídos</div>
+                <div class="card-body">
+                    {% if documento.dados_extraidos %}
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Provedor</dt>
+                        <dd class="col-sm-7">{{ documento.dados_extraidos.get_provedor_llm_utilizado_display }}</dd>
+
+                        <dt class="col-sm-5">Modelo</dt>
+                        <dd class="col-sm-7">{{ documento.dados_extraidos.modelo_llm_utilizado }}</dd>
+
+                        <dt class="col-sm-5">Tempo Resposta</dt>
+                        <dd class="col-sm-7">{{ documento.dados_extraidos.tempo_resposta_ms|default:"—" }} ms</dd>
+
+                        <dt class="col-sm-5">Tentativas</dt>
+                        <dd class="col-sm-7">{{ documento.dados_extraidos.tentativas_realizadas }}</dd>
+
+                        <dt class="col-sm-5">Precisa Revisão</dt>
+                        <dd class="col-sm-7">
+                            {% if documento.dados_extraidos.precisa_revisao %}
+                                <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Sim</span>
+                            {% else %}
+                                <span class="text-success"><i class="bi bi-check-circle"></i> Não</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+
+                    <hr>
+                    <h6>Campos Extraídos:</h6>
+                    <pre class="bg-light p-3 rounded" style="font-size: 0.8rem; max-height: 300px; overflow-y: auto;">{{ documento.dados_extraidos.campos_extraidos|pprint }}</pre>
+
+                    {% if documento.dados_extraidos.resposta_bruta_llm %}
+                    <hr>
+                    <h6>Resposta Bruta (falha):</h6>
+                    <pre class="bg-danger bg-opacity-10 p-3 rounded" style="font-size: 0.8rem;">{{ documento.dados_extraidos.resposta_bruta_llm }}</pre>
+                    {% endif %}
+                    {% else %}
+                    <div class="empty-state py-3">
+                        <div class="empty-icon"><i class="bi bi-hourglass-split"></i></div>
+                        <p>Extração ainda não concluída.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

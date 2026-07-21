@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% load static %}
+{% load doc_tags %}
+
+{% block title %}Validar Documento #{{ documento.id }} — Extracão Contábil{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Validar Documento #{{ documento.id }}</h1>
+            <p class="subtitle">
+                {{ documento.get_tipo_documento_display }}
+                {% if dados_extraidos.precisa_revisao %}
+                    <span class="badge badge-status" style="background: #FEF3C7; color: #92400E;">
+                        <i class="bi bi-exclamation-triangle"></i> Precisa Revisão
+                    </span>
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'validacao:queue' %}" class="btn btn-outline-navy">
+            <i class="bi bi-arrow-left"></i> Voltar à Fila
+        </a>
+    </div>
+
+    <div class="validation-layout">
+        <!-- Left Panel: Document Preview -->
+        <div class="validation-panel">
+            <div class="validation-panel-header">
+                <i class="bi bi-file-earmark"></i> Documento Original
+            </div>
+            <div class="validation-panel-body" style="min-height: 400px;">
+                {% if documento.formato_arquivo == 'xml' %}
+                    <pre class="bg-light p-3 rounded" style="font-size: 0.8rem; max-height: 500px; overflow-y: auto; white-space: pre-wrap;">{{ documento.arquivo_original|read_file }}</pre>
+                {% elif documento.formato_arquivo == 'pdf' %}
+                    <div id="pdf-preview-container">
+                        <!-- PDF.js Viewer -->
+                        <div id="pdf-viewer" style="width: 100%; height: 500px; overflow-y: auto; border: 1px solid #e2ddd4; border-radius: 8px; background: #525659;">
+                            <div id="pdf-loading" class="text-center py-5">
+                                <div class="spinner-border text-warning" role="status"></div>
+                                <p class="mt-2 text-muted">Carregando PDF...</p>
+                            </div>
+                            <div id="pdf-pages"></div>
+                        </div>
+                        <!-- Controls -->
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-muted">{{ documento.arquivo_original.name }}</small>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-navy" onclick="pdfZoomOut()" title="Diminuir zoom">
+                                    <i class="bi bi-zoom-out"></i>
+                                </button>
+                                <span id="pdf-zoom-label" class="text-muted" style="font-size: 0.75rem; min-width: 40px; text-align: center;">100%</span>
+                                <button type="button" class="btn btn-sm btn-outline-navy" onclick="pdfZoomIn()" title="Aumentar zoom">
+                                    <i class="bi bi-zoom-in"></i>
+                                </button>
+                            </div>
+                            <a href="{{ documento.arquivo_original.url }}" target="_blank" class="btn btn-outline-navy btn-sm">
+                                <i class="bi bi-box-arrow-up-right"></i> Abrir em nova aba
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- PDF.js Scripts -->
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+                    <script>
+                    (function() {
+                        const BASE_SCALE = 1.5;
+                        const pdfUrl = '{{ documento.arquivo_original.url }}';
+                        const container = document.getElementById('pdf-pages');
+                        const loadingEl = document.getElementById('pdf-loading');
+                        let currentScale = BASE_SCALE;
+                        let pdfDoc = null;
+                        let renderTimeout = null;
+
+                        // Set worker source
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+                        function renderAllPages() {
+                            if (!pdfDoc) return;
+                            container.innerHTML = '';
+                            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                                renderPage(i);
+                            }
+                        }
+
+                        function renderPage(num) {
+                            pdfDoc.getPage(num).then(function(page) {
+                                const viewport = page.getViewport({ scale: currentScale });
+                                const canvas = document.createElement('canvas');
+                                canvas.className = 'pdf-page-canvas';
+                                canvas.style.display = 'block';
+                                canvas.style.margin = '0 auto 8px auto';
+                                canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                                const ctx = canvas.getContext('2d');
+                                canvas.height = viewport.height;
+                                canvas.width = viewport.width;
+                                page.render({ canvasContext: ctx, viewport: viewport });
+                                container.appendChild(canvas);
+                            });
+                        }
+
+                        function loadPdf() {
+                            pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
+                                pdfDoc = pdf;
+                                loadingEl.style.display = 'none';
+                                renderAllPages();
+                            }).catch(function(err) {
+                                loadingEl.innerHTML = '<div class="text-center py-5"><i class="bi bi-exclamation-triangle" style="font-size: 2rem; color: var(--color-danger);"></i><p class="mt-2">Erro ao carregar PDF.</p><a href="' + pdfUrl + '" target="_blank" class="btn btn-outline-navy btn-sm mt-2"><i class="bi bi-box-arrow-up-right"></i> Abrir em nova aba</a></div>';
+                            });
+                        }
+
+                        function debouncedRender() {
+                            clearTimeout(renderTimeout);
+                            renderTimeout = setTimeout(renderAllPages, 300);
+                        }
+
+                        // Zoom controls
+                        window.pdfZoomIn = function() {
+                            currentScale = Math.min(currentScale + 0.25, 3.0);
+                            document.getElementById('pdf-zoom-label').textContent = Math.round(currentScale * 100 / BASE_SCALE) + '%';
+                            debouncedRender();
+                        };
+
+                        window.pdfZoomOut = function() {
+                            currentScale = Math.max(currentScale - 0.25, 0.5);
+                            document.getElementById('pdf-zoom-label').textContent = Math.round(currentScale * 100 / BASE_SCALE) + '%';
+                            debouncedRender();
+                        };
+
+                        // Load on page ready
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', loadPdf);
+                        } else {
+                            loadPdf();
+                        }
+                    })();
+                    </script>
+                {% elif documento.formato_arquivo == 'imagem' %}
+                    <div class="text-center">
+                        <img src="{{ documento.arquivo_original.url }}" alt="Documento #{{ documento.id }}"
+                             style="max-width: 100%; max-height: 500px; border-radius: 8px;">
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Panel: Extracted Data -->
+        <div class="validation-panel">
+            <div class="validation-panel-header">
+                <i class="bi bi-robot"></i> Dados Extraídos pelo LLM
+            </div>
+            <div class="validation-panel-body">
+                {% if dados_extraidos %}
+                <form method="post" action="{% url 'validacao:approve' documento.id %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            Provedor: <strong>{{ dados_extraidos.provedor_llm_utilizado|upper }}</strong> |
+                            Modelo: <strong>{{ dados_extraidos.modelo_llm_utilizado }}</strong> |
+                            Tempo: <strong>{{ dados_extraidos.tempo_resposta_ms|default:"—" }}ms</strong>
+                        </small>
+                    </div>
+
+                    {% for key, value in dados_extraidos.campos_extraidos.items %}
+                        {% if key != "_metadata" %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ key|title }}</label>
+                            {% if value is iterable and value is not string %}
+                                <textarea name="campo_{{ key }}" class="form-control" rows="3">{{ value }}</textarea>
+                            {% else %}
+                                <input type="text" name="campo_{{ key }}" class="form-control" value="{{ value|default:'' }}">
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between mt-4 pt-3" style="border-top: 1px solid #f0ece4;">
+                        <button type="submit" formaction="{% url 'validacao:reject' documento.id %}"
+                                class="btn btn-outline-danger" onclick="return confirm('Tem certeza que deseja rejeitar?')">
+                            <i class="bi bi-x-lg"></i> Rejeitar
+                        </button>
+                        <button type="submit" class="btn btn-gold">
+                            <i class="bi bi-check-lg"></i> Aprovar e Criar Lançamento
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="empty-state py-5">
+                    <div class="empty-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <h4>Extração pendente</h4>
+                    <p>Os dados ainda não foram extraídos.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

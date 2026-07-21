@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Configuração LLM — Extracão Contábil{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Config page specific styles */
+    .config-hero {
+        background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-light) 100%);
+        border-radius: var(--radius-lg);
+        padding: var(--space-xl) var(--space-2xl);
+        margin-bottom: var(--space-xl);
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .config-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .config-hero h1 {
+        color: #fff;
+        font-size: 1.75rem;
+        margin-bottom: 0.25rem;
+    }
+    .config-hero .subtitle {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.9rem;
+    }
+
+    /* Provider selector cards */
+    .provider-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-lg);
+        margin-bottom: var(--space-xl);
+    }
+    @media (max-width: 767.98px) {
+        .provider-cards { grid-template-columns: 1fr; }
+    }
+    .provider-card {
+        border: 2px solid #e2ddd4;
+        border-radius: var(--radius-lg);
+        padding: var(--space-xl);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fff;
+        position: relative;
+    }
+    .provider-card:hover {
+        border-color: var(--color-gold);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    .provider-card.active {
+        border-color: var(--color-gold);
+        background: rgba(201, 168, 76, 0.04);
+        box-shadow: var(--shadow-gold);
+    }
+    .provider-card.active::after {
+        content: '\f26a';
+        font-family: 'bootstrap-icons';
+        position: absolute;
+        top: var(--space-md);
+        right: var(--space-md);
+        color: var(--color-gold);
+        font-size: 1.25rem;
+    }
+    .provider-card .provider-icon {
+        font-size: 2.5rem;
+        margin-bottom: var(--space-md);
+        display: block;
+    }
+    .provider-card.ollama .provider-icon { color: var(--color-success); }
+    .provider-card.api .provider-icon { color: var(--color-info); }
+    .provider-card h3 {
+        font-size: 1.125rem;
+        margin-bottom: var(--space-xs);
+    }
+    .provider-card p {
+        color: var(--color-ink-light);
+        font-size: 0.8125rem;
+        margin-bottom: 0;
+    }
+
+    /* Settings sections */
+    .settings-section {
+        background: #fff;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        margin-bottom: var(--space-lg);
+    }
+    .settings-section-header {
+        background: var(--color-paper);
+        padding: var(--space-md) var(--space-xl);
+        border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .settings-section-header i {
+        color: var(--color-gold);
+        font-size: 1.125rem;
+    }
+    .settings-section-header h3 {
+        font-size: 1rem;
+        margin: 0;
+    }
+    .settings-section-body {
+        padding: var(--space-xl);
+    }
+
+    /* Status indicator */
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+    .status-dot.connected { background: var(--color-success); box-shadow: 0 0 6px rgba(22,163,74,0.4); }
+    .status-dot.disconnected { background: var(--color-danger); }
+    .status-dot.unknown { background: var(--color-slate); }
+
+    /* Test button animation */
+    .btn-test { position: relative; overflow: hidden; }
+    .btn-test .spinner-border {
+        width: 1rem; height: 1rem; border-width: 2px;
+    }
+
+    /* Models list */
+    .models-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e2ddd4;
+        border-radius: var(--radius-md);
+        margin-top: var(--space-sm);
+    }
+    .models-list .model-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        font-size: 0.875rem;
+    }
+    .models-list .model-item:hover {
+        background: rgba(201, 168, 76, 0.08);
+    }
+    .models-list .model-item.selected {
+        background: rgba(201, 168, 76, 0.12);
+        color: var(--color-navy);
+        font-weight: 500;
+    }
+
+    /* Hidden sections toggle */
+    .config-section { display: none; }
+    .config-section.active { display: block; }
+
+    /* API key mask */
+    .api-key-wrapper {
+        position: relative;
+    }
+    .api-key-wrapper .toggle-visibility {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--color-ink-light);
+        cursor: pointer;
+        padding: 4px;
+    }
+    .api-key-wrapper .toggle-visibility:hover {
+        color: var(--color-navy);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+    <!-- Hero Header -->
+    <div class="config-hero">
+        <h1><i class="bi bi-cpu"></i> Configuração do LLM</h1>
+        <p class="subtitle">Configure o provedor de inteligência artificial para extração de dados</p>
+    </div>
+
+    <!-- Current Status -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center">
+            {% if config.is_configured %}
+                <span class="status-dot connected"></span>
+                <strong class="text-success">Configurado</strong>
+            {% else %}
+                <span class="status-dot disconnected"></span>
+                <strong class="text-danger">Não configurado</strong>
+            {% endif %}
+        </div>
+        <span class="text-muted">|</span>
+        <span class="text-muted">
+            Provedor: <strong>{{ config.get_provider_display }}</strong> ·
+            Modelo: <strong>{{ config.active_model }}</strong> ·
+            Última atualização: {{ config.updated_at|date:"d/m/Y H:i" }}
+        </span>
+    </div>
+
+    <form method="post" id="llmConfigForm">
+        {% csrf_token %}
+
+        <!-- Provider Selection Cards -->
+        <div class="provider-cards">
+            <div class="provider-card ollama {% if config.provider == 'ollama' %}active{% endif %}"
+                 onclick="selectProvider('ollama')" id="card-ollama">
+                <span class="provider-icon"><i class="bi bi-hdd-rack"></i></span>
+                <h3>Ollama (Local)</h3>
+                <p>Roda modelos de IA localmente no seu computador. Ideal para desenvolvimento e testes. Não requer chave de API.</p>
+            </div>
+            <div class="provider-card api {% if config.provider == 'api' %}active{% endif %}"
+                 onclick="selectProvider('api')" id="card-api">
+                <span class="provider-icon"><i class="bi bi-cloud-arrow-up"></i></span>
+                <h3>API Externa (GROQ, OpenAI...)</h3>
+                <p>Conecta a provedores de API na nuvem. Necessário para produção. Suporta GROQ, OpenAI, Anthropic e outros compatíveis.</p>
+            </div>
+        </div>
+
+        <!-- Provider is managed by form's select widget -->
+
+        <!-- ═══ OLLAMA SETTINGS ═══ -->
+        <div class="config-section {% if config.provider == 'ollama' %}active{% endif %}" id="section-ollama">
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <i class="bi bi-hdd-rack"></i>
+                    <h3>Configuração do Ollama</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label for="id_ollama_host" class="form-label">Host do Ollama</label>
+                            {{ form.ollama_host }}
+                            {% if form.ollama_host.errors %}
+                            <div class="text-danger mt-1"><small>{{ form.ollama_host.errors.0 }}</small></div>
+                            {% endif %}
+                            <small class="text-muted">URL do servidor Ollama rodando localmente.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_ollama_model" class="form-label">Modelo</label>
+                            <div class="input-group">
+                                {{ form.ollama_model }}
+                                <button type="button" class="btn btn-outline-navy" onclick="fetchOllamaModels()" id="btn-fetch-models">
+                                    <i class="bi bi-arrow-clockwise"></i> Buscar
+                                </button>
+                            </div>
+                            {% if form.ollama_model.errors %}
+                            <div class="text-danger mt-1"><small>{{ form.ollama_model.errors.0 }}</small></div>
+                            {% endif %}
+                            <div id="ollama-models-list" class="models-list" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3" style="border-top: 1px solid #f0ece4;">
+                        <button type="button" class="btn btn-outline-navy btn-test" onclick="testConnection('ollama')" id="btn-test-ollama">
+                            <i class="bi bi-lightning"></i> Testar Conexão
+                        </button>
+                        <span id="test-result-ollama" class="ms-3"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ API SETTINGS ═══ -->
+        <div class="config-section {% if config.provider == 'api' %}active{% endif %}" id="section-api">
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    <h3>Configuração da API Externa</h3>
+                </div>
+                <div class="settings-section-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label for="id_api_provider_name" class="form-label">Provedor</label>
+                            {{ form.api_provider_name }}
+                            {% if form.api_provider_name.errors %}
+                            <div class="text-danger mt-1"><small>{{ form.api_provider_name.errors.0 }}</small></div>
+                            {% endif %}
+                            <small class="text-muted">Identificador (groq, openai, anthropic...).</small>
+                        </div>
+                        <div class="col-md-8">
+                            <label for="id_api_base_url" class="form-label">URL Base da API</label>
+                            {{ form.api_base_url }}
+                            {% if form.api_base_url.errors %}
+                            <div class="text-danger mt-1"><small>{{ form.api_base_url.errors.0 }}</small></div>
+                            {% endif %}
+                            <small class="text-muted">Endpoint compatível com OpenAI.</small>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="id_api_key" class="form-label">Chave de API</label>
+                            <div class="api-key-wrapper">
+                                {{ form.api_key }}
+                                <button type="button" class="toggle-visibility" onclick="toggleApiKeyVisibility()">
+                                    <i class="bi bi-eye" id="eye-icon"></i>
+                                </button>
+                            </div>
+                            {% if form.api_key.errors %}
+                            <div class="text-danger mt-1"><small>{{ form.api_key.errors.0 }}</small></div>
+                            {% endif %}
+                            <small class="text-muted">{{ form.api_key.help_text }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_api_model" class="form-label">Modelo</label>
+                            <div class="input-group">
+                                {{ form.api_model }}
+                                <button type="button" class="btn btn-outline-navy" onclick="fetchAPIModels()" id="btn-fetch-api-models">
+                                    <i class="bi bi-arrow-clockwise"></i> Buscar
+                                </button>
+                            </div>
+                            {% if form.api_model.errors %}
+                            <div class="text-danger mt-1"><small>{{ form.api_model.errors.0 }}</small></div>
+                            {% endif %}
+                            <div id="api-models-list" class="models-list" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3" style="border-top: 1px solid #f0ece4;">
+                        <button type="button" class="btn btn-outline-navy btn-test" onclick="testConnection('api')" id="btn-test-api">
+                            <i class="bi bi-lightning"></i> Testar Conexão
+                        </button>
+                        <span id="test-result-api" class="ms-3"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ COMMON SETTINGS ═══ -->
+        <div class="settings-section">
+            <div class="settings-section-header">
+                <i class="bi bi-sliders"></i>
+                <h3>Configurações Gerais</h3>
+            </div>
+            <div class="settings-section-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="id_max_retries" class="form-label">Máximo de Tentativas</label>
+                        {{ form.max_retries }}
+                        {% if form.max_retries.errors %}
+                        <div class="text-danger mt-1"><small>{{ form.max_retries.errors.0 }}</small></div>
+                        {% endif %}
+                        <small class="text-muted">Tentativas antes de marcar como "precisa revisão".</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_timeout_seconds" class="form-label">Timeout (segundos)</label>
+                        {{ form.timeout_seconds }}
+                        {% if form.timeout_seconds.errors %}
+                        <div class="text-danger mt-1"><small>{{ form.timeout_seconds.errors.0 }}</small></div>
+                        {% endif %}
+                        <small class="text-muted">Limite de tempo para chamadas ao LLM.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="d-flex justify-content-end gap-3 mt-4">
+            <a href="{% url 'dashboard:index' %}" class="btn btn-outline-navy">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            <button type="submit" class="btn btn-gold px-4 py-2">
+                <i class="bi bi-check-lg"></i> Salvar Configuração
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Provider Selection ──
+function selectProvider(type) {
+    // Update the form's select widget
+    const select = document.getElementById('provider-select');
+    if (select) {
+        select.value = type;
+        select.dispatchEvent(new Event('change'));
+    }
+
+    // Update card visuals
+    document.getElementById('card-ollama').classList.toggle('active', type === 'ollama');
+    document.getElementById('card-api').classList.toggle('active', type === 'api');
+
+    // Toggle sections
+    document.getElementById('section-ollama').classList.toggle('active', type === 'ollama');
+    document.getElementById('section-api').classList.toggle('active', type === 'api');
+}
+
+// ── Test Connection ──
+function testConnection(providerType) {
+    const btn = document.getElementById(`btn-test-${providerType}`);
+    const resultSpan = document.getElementById(`test-result-${providerType}`);
+    const originalHtml = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Testando...';
+    resultSpan.innerHTML = '';
+
+    const payload = { provider: providerType };
+
+    if (providerType === 'ollama') {
+        payload.ollama_host = document.getElementById('id_ollama_host').value;
+    } else {
+        payload.api_key = document.getElementById('id_api_key').value;
+        payload.api_base_url = document.getElementById('id_api_base_url').value;
+    }
+
+    fetch('{% url "llm_service:test_connection" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            resultSpan.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill"></i> ${data.message}</span>`;
+            if (data.models && data.models.length > 0) {
+                showModelsList(providerType, data.models);
+            }
+        } else {
+            resultSpan.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill"></i> ${data.message}</span>`;
+        }
+    })
+    .catch(err => {
+        resultSpan.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill"></i> Erro de rede: ${err.message}</span>`;
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    });
+}
+
+// ── Fetch Ollama Models ──
+function fetchOllamaModels() {
+    testConnection('ollama');
+}
+
+// ── Fetch API Models ──
+function fetchAPIModels() {
+    testConnection('api');
+}
+
+// ── Show Models List ──
+function showModelsList(providerType, models) {
+    const listId = providerType === 'ollama' ? 'ollama-models-list' : 'api-models-list';
+    const inputId = providerType === 'ollama' ? 'id_ollama_model' : 'id_api_model';
+    const list = document.getElementById(listId);
+    const currentValue = document.getElementById(inputId).value;
+
+    list.innerHTML = '';
+    list.style.display = 'block';
+
+    models.forEach(model => {
+        const item = document.createElement('div');
+        item.className = 'model-item' + (model === currentValue ? ' selected' : '');
+        item.textContent = model;
+        item.onclick = function() {
+            document.getElementById(inputId).value = model;
+            list.querySelectorAll('.model-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+        };
+        list.appendChild(item);
+    });
+}
+
+// ── Toggle API Key Visibility ──
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('id_api_key');
+    const icon = document.getElementById('eye-icon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Nota Fiscal",
+    "description": "Schema de validação para extração de dados de Nota Fiscal",
+    "type": "object",
+    "required": ["numero"],
+    "properties": {
+        "numero": {
+            "type": "string",
+            "description": "Número da nota fiscal"
+        },
+        "serie": {
+            "type": ["string", "null"],
+            "description": "Série da nota fiscal"
+        },
+        "cnpj_emitente": {
+            "type": ["string", "null"],
+            "description": "CNPJ do emitente (apenas dígitos)"
+        },
+        "cnpj_destinatario": {
+            "type": ["string", "null"],
+            "description": "CNPJ do destinatário (apenas dígitos)"
+        },
+        "data_emissao": {
+            "type": ["string", "null"],
+            "description": "Data de emissão (YYYY-MM-DD)"
+        },
+        "valor_total": {
+            "type": ["string", "null"],
+            "description": "Valor total da nota"
+        },
+        "itens": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "descricao": {"type": "string"},
+                    "quantidade": {"type": ["string", "number"]},
+                    "valor_unitario": {"type": "string"},
+                    "valor_total": {"type": "string"}
+                }
+            },
+            "description": "Lista de itens da nota fiscal"
+        },
+        "chave_acesso": {
+            "type": ["string", "null"],
+            "description": "Chave de acesso da NF-e (44 dígitos)"
+        }
+    },
+    "additionalProperties": false
+}

@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Demonstrativo",
+    "description": "Schema de validação para extração de dados de Demonstrativo Contábil",
+    "type": "object",
+    "required": [],
+    "properties": {
+        "periodo_referencia": {
+            "type": ["string", "null"],
+            "description": "Período de referência do demonstrativo"
+        },
+        "categorias": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "categoria": {"type": "string"},
+                    "conta": {"type": "string"},
+                    "debito": {"type": "string"},
+                    "credito": {"type": "string"},
+                    "saldo": {"type": "string"}
+                }
+            },
+            "description": "Lista de categorias/contas do demonstrativo"
+        },
+        "saldo": {
+            "type": ["string", "null"],
+            "description": "Saldo total"
+        }
+    },
+    "additionalProperties": false
+}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Login — Extracão Contábil{% endblock %}
+
+{% block content %}
+<div class="login-page">
+    <div class="login-card card animate-in">
+        <div class="card-body">
+            <div class="login-brand">
+                <span class="brand-icon"><i class="bi bi-file-earmark-text"></i></span>
+                <h1>Extracão<span class="brand-accent">.</span></h1>
+                <p class="text-muted mb-0">Sistema de Pré-Lançamento Contábil</p>
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                Usuário ou senha inválidos. Tente novamente.
+            </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">Usuário</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" id="id_username"
+                               class="form-control" placeholder="seu.usuario"
+                               autofocus required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="id_password" class="form-label">Senha</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" id="id_password"
+                               class="form-control" placeholder="••••••••"
+                               required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-gold w-100 py-2">
+                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                </button>
+
+                {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

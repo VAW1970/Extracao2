@@ -1,0 +1,10 @@
+[project]
+name = "extracao-contabil"
+version = "0.1.0"
+description = "Sistema de Extração via LLM e Pré-Lançamento Contábil"
+requires-python = ">=3.11,<3.13"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "-v --tb=short"

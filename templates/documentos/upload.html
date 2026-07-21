@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Upload de Documento — Extracão Contábil{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+    <div class="page-header">
+        <h1><i class="bi bi-cloud-arrow-up"></i> Upload de Documento</h1>
+        <p class="subtitle">Envie PDF, imagem (JPG/PNG) ou XML para extração via LLM</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Upload Area -->
+                        <div class="upload-area" id="uploadArea" onclick="document.getElementById('id_arquivo_original').click()">
+                            <div class="upload-icon">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                            </div>
+                            <h4>Arraste o arquivo aqui ou clique para selecionar</h4>
+                            <p>Formatos aceitos: PDF, JPG, PNG, XML — até 4.5 MB</p>
+                            <div id="fileInfo" class="mt-3" style="display: none;">
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> <span id="fileName"></span></span>
+                            </div>
+                        </div>
+
+                        <!-- Hidden file input -->
+                        {{ form.arquivo_original }}
+                        {% if form.arquivo_original.errors %}
+                        <div class="text-danger mt-2">
+                            {% for error in form.arquivo_original.errors %}
+                            <small><i class="bi bi-exclamation-circle"></i> {{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Document Type -->
+                        <div class="mt-4">
+                            <label for="id_tipo_documento" class="form-label">Tipo de Documento</label>
+                            {{ form.tipo_documento }}
+                            {% if form.tipo_documento.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.tipo_documento.errors %}
+                                <small><i class="bi bi-exclamation-circle"></i> {{ error }}</small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top: 1px solid #f0ece4;">
+                            <a href="{% url 'documentos:list' %}" class="btn btn-outline-navy">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-gold px-4">
+                                <i class="bi bi-send"></i> Enviar para Extração
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const fileInput = document.getElementById('id_arquivo_original');
+const uploadArea = document.getElementById('uploadArea');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+
+fileInput.addEventListener('change', function() {
+    if (this.files.length > 0) {
+        fileName.textContent = this.files[0].name;
+        fileInfo.style.display = 'block';
+        uploadArea.style.borderColor = 'var(--color-success)';
+        uploadArea.style.background = 'rgba(22, 163, 74, 0.04)';
+    }
+});
+
+// Drag and drop
+uploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.style.borderColor = 'var(--color-gold)';
+    this.style.background = 'rgba(201, 168, 76, 0.08)';
+});
+
+uploadArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.style.borderColor = '';
+    this.style.background = '';
+});
+
+uploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.style.borderColor = '';
+    this.style.background = '';
+    if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

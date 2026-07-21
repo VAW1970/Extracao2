@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Contrato",
+    "description": "Schema de validação para extração de dados de Contrato",
+    "type": "object",
+    "required": [],
+    "properties": {
+        "partes_envolvidas": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Lista de nomes das partes envolvidas"
+        },
+        "objeto": {
+            "type": ["string", "null"],
+            "description": "Objeto/descrição do contrato"
+        },
+        "valor": {
+            "type": ["string", "null"],
+            "description": "Valor total do contrato"
+        },
+        "data_inicio": {
+            "type": ["string", "null"],
+            "description": "Data de início da vigência (YYYY-MM-DD)"
+        },
+        "data_fim": {
+            "type": ["string", "null"],
+            "description": "Data de término da vigência (YYYY-MM-DD)"
+        },
+        "forma_pagamento": {
+            "type": ["string", "null"],
+            "description": "Forma de pagamento descrita"
+        }
+    },
+    "additionalProperties": false
+}

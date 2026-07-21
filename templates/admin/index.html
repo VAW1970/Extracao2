@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main" class="admin-custom-index">
+    {% if app_list %}
+        {% for app in app_list %}
+        <div class="admin-app-module">
+            <h2 class="admin-app-title">
+                <i class="bi bi-folder2-open"></i> {{ app.name }}
+            </h2>
+            <div class="admin-app-models">
+                {% for model in app.models %}
+                <a href="{{ model.admin_url }}" class="admin-model-link {% if model.admin_url in request.path %}active{% endif %}">
+                    <div class="admin-model-info">
+                        <span class="admin-model-name">{{ model.name }}</span>
+                        {% if model.object_name != model.name %}
+                        <span class="admin-model-meta">{{ model.object_name }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="admin-model-actions">
+                        {% if model.add_url %}
+                        <span class="admin-action-badge add" title="Adicionar"><i class="bi bi-plus-circle"></i></span>
+                        {% endif %}
+                        {% if model.view_only %}
+                        <span class="admin-action-badge view" title="Visualizar"><i class="bi bi-eye"></i></span>
+                        {% else %}
+                        <span class="admin-action-badge change" title="Alterar"><i class="bi bi-pencil"></i></span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="admin-empty-state">
+        <i class="bi bi-inbox"></i>
+        <p>{% translate "Nenhum modelo registrado." %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+{{ block.super }}
+{% endblock %}
