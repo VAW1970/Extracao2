@@ -1,15 +1,5 @@
 {
-    "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput",
-    "builds": [
-        {
-            "src": "config/wsgi.py",
-            "use": "@vercel/python",
-            "config": {
-                "maxLambdaSize": "50mb",
-                "runtime": "python3.12"
-            }
-        }
-    ],
+    "buildCommand": "python -m pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput",
     "build": {
         "env": {
             "DJANGO_SETTINGS_MODULE": "config.settings"
@@ -25,7 +15,7 @@
         },
         {
             "src": "/(.*)",
-            "dest": "/config/wsgi.py"
+            "dest": "/"
         }
     ]
 }
