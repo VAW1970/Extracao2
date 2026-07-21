@@ -9,7 +9,9 @@ from datetime import timedelta
 import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, F, Q
+from django.db.models.functions import Cast
+from django.db.models import FloatField
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -65,7 +67,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # ── LLM Usage Panel ──
         llm_stats = DadosExtraidos.objects.aggregate(
             total_extracoes=Count("id"),
-            taxa_precisa_revisao=Avg("precisa_revisao"),
+            taxa_precisa_revisao=Avg(
+                Cast("precisa_revisao", output_field=FloatField())
+            ),
             tempo_medio_ms=Avg("tempo_resposta_ms"),
         )
         context["llm_stats"] = llm_stats
