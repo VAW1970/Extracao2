@@ -162,12 +162,16 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Only collect static files from explicit STATICFILES_DIRS, not from apps.
+# Prevents invalid relative path errors from third-party package static dirs.
+STATICFILES_FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+]
+
 # WhiteNoise for serving static files in dev; Vercel serves via CDN in prod.
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-        if not DEBUG
-        else "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
     "default": {
         # In dev: filesystem. In prod: overridden to Vercel Blob via env.
