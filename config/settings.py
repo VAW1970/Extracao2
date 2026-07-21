@@ -265,3 +265,10 @@ if IS_VERCEL:
     DEBUG = False
     # Allow Vercel deployment URLs
     ALLOWED_HOSTS = ALLOWED_HOSTS + [".vercel.app"]
+
+    # Security — Vercel uses HTTPS
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host != "*"]
+    SECURE_SSL_REDIRECT = False  # Vercel handles HTTPS termination
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
