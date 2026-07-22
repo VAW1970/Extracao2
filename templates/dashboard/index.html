@@ -45,7 +45,7 @@
                 <div class="card-header">
                     <i class="bi bi-graph-up"></i> Volume de Documentos (Últimos 30 dias)
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="min-height: 350px;">
                     <div class="chart-container">
                         <canvas id="timelineChart"></canvas>
                     </div>
@@ -57,7 +57,7 @@
                 <div class="card-header">
                     <i class="bi bi-pie-chart"></i> Por Tipo de Documento
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="min-height: 350px;">
                     <div class="chart-container">
                         <canvas id="tipoChart"></canvas>
                     </div>
@@ -223,74 +223,85 @@ document.addEventListener('DOMContentLoaded', function() {
     // Timeline Chart
     const timelineCtx = document.getElementById('timelineChart');
     if (timelineCtx) {
-        new Chart(timelineCtx, {
-            type: 'line',
-            data: {
-                labels: {{ timeline_labels|safe }},
-                datasets: [{
-                    label: 'Documentos',
-                    data: {{ timeline_values|safe }},
-                    borderColor: '#C9A84C',
-                    backgroundColor: 'rgba(201, 168, 76, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#C9A84C',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
+        try {
+            new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ timeline_labels|safe }},
+                    datasets: [{
+                        label: 'Documentos',
+                        data: {{ timeline_values|safe }},
+                        borderColor: '#C9A84C',
+                        backgroundColor: 'rgba(201, 168, 76, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#C9A84C',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
                     },
-                    x: {
-                        grid: { display: false }
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
                     }
                 }
-            }
-        });
+            });
+            console.log('Timeline chart initialized');
+        } catch (e) {
+            console.error('Timeline chart error:', e);
+        }
     }
 
     // Type Distribution Chart
     const tipoCtx = document.getElementById('tipoChart');
     if (tipoCtx) {
-        const tipoData = {{ por_tipo|safe }};
-        new Chart(tipoCtx, {
-            type: 'doughnut',
-            data: {
-                labels: tipoData.map(d => d.tipo_documento),
-                datasets: [{
-                    data: tipoData.map(d => d.total),
-                    backgroundColor: ['#C9A84C', '#1B2838', '#16A34A', '#DC2626'],
-                    borderWidth: 0,
-                    hoverOffset: 8,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 16,
-                            usePointStyle: true,
-                            pointStyleWidth: 8,
+        try {
+            const tipoData = {{ por_tipo|safe }};
+            console.log('Tipo data:', tipoData);
+            new Chart(tipoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: tipoData.map(d => d.tipo_documento),
+                    datasets: [{
+                        data: tipoData.map(d => d.total),
+                        backgroundColor: ['#C9A84C', '#1B2838', '#16A34A', '#DC2626'],
+                        borderWidth: 0,
+                        hoverOffset: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyleWidth: 8,
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+            console.log('Tipo chart initialized');
+        } catch (e) {
+            console.error('Tipo chart error:', e);
+        }
     }
 });
 </script>
