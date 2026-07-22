@@ -73,15 +73,13 @@ class TestConvertMonetaryFields:
     def test_convert_simple_fields(self):
         data = {"valor_total": "1500.00", "valor": "2000.50"}
         result = convert_monetary_fields(data)
-        from decimal import Decimal
-        assert result["valor_total"] == Decimal("1500.00")
-        assert result["valor"] == Decimal("2000.50")
+        assert result["valor_total"] == "1500.00"
+        assert result["valor"] == "2000.50"
 
     def test_convert_comma_decimal(self):
         data = {"valor_total": "1.500,00"}
         result = convert_monetary_fields(data)
-        from decimal import Decimal
-        assert result["valor_total"] == Decimal("1500.00")
+        assert result["valor_total"] == "1500.00"
 
     def test_convert_nested_items(self):
         data = {
@@ -91,9 +89,8 @@ class TestConvertMonetaryFields:
             ]
         }
         result = convert_monetary_fields(data)
-        from decimal import Decimal
-        assert result["itens"][0]["valor_unitario"] == Decimal("10.00")
-        assert result["itens"][1]["valor_total"] == Decimal("11.00")
+        assert result["itens"][0]["valor_unitario"] == "10.00"
+        assert result["itens"][1]["valor_total"] == "11.00"
 
     def test_convert_none_values(self):
         data = {"valor_total": None}

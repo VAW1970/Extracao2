@@ -183,12 +183,23 @@ def convert_monetary_fields(dados: dict) -> dict:
     This is a safety net to ensure all monetary values are properly
     converted before database storage.
     """
+    from decimal import Decimal
+
     monetary_fields = [
         "valor_total", "valor", "saldo", "valor_produto",
         "valor_desconto", "valor_icms", "valor_ipi",
         "valor_pis", "valor_cofins",
         "valor_unitario",
     ]
+
+    def _decimal_to_str(obj):
+        if isinstance(obj, Decimal):
+            return str(obj)
+        if isinstance(obj, dict):
+            return {k: _decimal_to_str(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [_decimal_to_str(item) for item in obj]
+        return obj
 
     converted = dados.copy()
     for field in monetary_fields:
@@ -207,4 +218,8 @@ def convert_monetary_fields(dados: dict) -> dict:
                 for item in converted[key]
             ]
 
-    return converted
+    # Convert all Decimal to string for JSON serialization
+    return _decimal_to_str(converted)
+
+    # Convert all Decimal to string for JSON serialization
+    return _decimal_to_str(converted)
