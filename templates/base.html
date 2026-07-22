@@ -46,6 +46,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{% url 'dashboard:ajuda' %}" class="sidebar-link {% if request.resolver_match and request.resolver_match.url_name == 'ajuda' %}active{% endif %}">
+                        <i class="bi bi-question-circle"></i>
+                        <span>Ajuda</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{% url 'documentos:upload' %}" class="sidebar-link {% if request.resolver_match and request.resolver_match.url_name == 'upload' %}active{% endif %}">
                         <i class="bi bi-cloud-arrow-up"></i>
                         <span>Upload</span>

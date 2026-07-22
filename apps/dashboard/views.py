@@ -38,30 +38,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context["rejeitados"] = Documento.objects.filter(status=Documento.Status.REJEITADO).count()
 
         # ── Totals by type ──
-        context["por_tipo"] = (
+        tipo_qs = (
             Documento.objects.values("tipo_documento")
             .annotate(total=Count("id"))
             .order_by("tipo_documento")
         )
-
-        # ── Timeline (last 30 days) ──
-        timeline_data = (
-            Documento.objects.filter(data_upload__gte=thirty_days_ago)
-            .extra({"day": "date(data_upload)"})
-            .values("day")
-            .annotate(total=Count("id"))
-            .order_by("day")
-        )
-        context["timeline_labels"] = json.dumps([str(item["day"]) for item in timeline_data])
-        context["timeline_values"] = json.dumps([item["total"] for item in timeline_data])
-
-        # ── Type distribution (JSON for Chart.js) ──
-        tipo_data = (
-            Documento.objects.values("tipo_documento")
-            .annotate(total=Count("id"))
-            .order_by("tipo_documento")
-        )
-        context["por_tipo"] = json.dumps(list(tipo_data), default=str)
+        context["por_tipo"] = list(tipo_qs)
+        context["por_tipo_json"] = json.dumps(list(tipo_qs), default=str)
 
         # ── LLM Usage Panel ──
         llm_stats = DadosExtraidos.objects.aggregate(
@@ -145,3 +128,25 @@ class ExportCSVView(LoginRequiredMixin, TemplateView):
 
         logger.info(f"CSV exportado por {request.user} — {lancamentos.count()} lançamentos")
         return response
+
+
+class AjudaView(LoginRequiredMixin, TemplateView):
+    """Help page with user-friendly documentation."""
+
+    template_name = "dashboard/ajuda.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Ajuda e Documentação"
+        return context
+
+
+class HelpView(LoginRequiredMixin, TemplateView):
+    """Help page with user-friendly documentation."""
+
+    template_name = "dashboard/help.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Ajuda — Extração Contábil"
+        return context
