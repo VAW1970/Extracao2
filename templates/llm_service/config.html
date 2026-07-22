@@ -206,7 +206,7 @@
         <span class="text-muted">|</span>
         <span class="text-muted">
             Provedor: <strong>{{ config.get_provider_display }}</strong> ·
-            Modelo: <strong>{{ config.active_model }}</strong> ·
+            Modelo: <strong>{{ active_model }}</strong> ·
             Última atualização: {{ config.updated_at|date:"d/m/Y H:i" }}
         </span>
     </div>
@@ -276,6 +276,14 @@
 
     <!-- ═══ API SETTINGS ═══ -->
     <div class="config-section {% if config.provider == 'api' %}active{% endif %}" id="section-api">
+        {% if not config.api_key and active_base_url %}
+        <div class="alert alert-warning mb-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Atenção:</strong> A chave de API não está salva no banco. O sistema está usando as variáveis de ambiente (<code>LLM_API_KEY</code>, <code>LLM_MODEL</code>, <code>LLM_BASE_URL</code>).
+            <br>Modelo ativo (env): <strong>{{ active_model }}</strong> · URL: <strong>{{ active_base_url }}</strong>
+            <br>Salve uma chave aqui para sobrescrever as variáveis de ambiente.
+        </div>
+        {% endif %}
         {% if request.META.HTTP_HOST and '.vercel.app' in request.META.HTTP_HOST %}
         <div class="alert alert-info mb-3">
             <i class="bi bi-info-circle"></i>

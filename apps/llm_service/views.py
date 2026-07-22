@@ -28,6 +28,25 @@ class LLMConfigView(LoginRequiredMixin, TemplateView):
         config = LLMConfig.get_active()
         context["form"] = LLMConfigForm(instance=config)
         context["config"] = config
+
+        # Determine the actual model being used (DB vs env var)
+        import os
+        from django.conf import settings
+        if config.provider == "api":
+            if config.api_key:
+                # Using DB config
+                active_model = config.api_model
+                active_url = config.api_base_url
+            else:
+                # Fallback to env vars
+                active_model = getattr(settings, "LLM_MODEL", config.api_model)
+                active_url = getattr(settings, "LLM_BASE_URL", config.api_base_url)
+            context["active_model"] = active_model
+            context["active_base_url"] = active_url
+        else:
+            context["active_model"] = config.active_model
+            context["active_base_url"] = config.ollama_host
+
         return context
 
     def post(self, request, *args, **kwargs):

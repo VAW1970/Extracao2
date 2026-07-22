@@ -60,11 +60,11 @@ class LLMConfig(models.Model):
         blank=True,
         default="",
         verbose_name="Chave de API",
-        help_text="Chave secreta da API. Armazenada criptografada no banco.",
+        help_text="Chave secreta da API. Em produção, lida da variável de ambiente LLM_API_KEY.",
     )
     api_model = models.CharField(
         max_length=128,
-        default="meta/llama-3.3-70b-instruct",
+        default="nvidia/nemotron-3-ultra-550b-a55b",
         verbose_name="Modelo da API",
         help_text="Nome do modelo a usar na API externa.",
     )
@@ -102,24 +102,41 @@ class LLMConfig(models.Model):
 
     @property
     def is_configured(self) -> bool:
-        """Check if the current provider has minimum required config."""
+        """Check if the current provider has minimum required config.
+
+        For API provider, considers both DB-stored key and env var LLM_API_KEY.
+        """
+        import os
         if self.provider == self.ProviderChoice.OLLAMA:
             return bool(self.ollama_host and self.ollama_model)
-        return bool(self.api_key and self.api_model and self.api_base_url)
+        # API: key can come from DB or env var (production)
+        has_key = bool(self.api_key) or bool(os.environ.get("LLM_API_KEY", ""))
+        return has_key and bool(self.api_model and self.api_base_url)
 
     @classmethod
     def get_active(cls) -> "LLMConfig":
         """Get or create the singleton config instance.
         
         In production (Vercel), force API provider even if DB says ollama,
-        since Ollama cannot run in serverless environment.
+        since Ollama cannot run in serverless environment. Also syncs
+        DB config with env vars when the DB has stale defaults.
         """
         import os
+        from django.conf import settings
         config, _ = cls.objects.get_or_create(pk=1)
+
+        # In production, force API provider
         if os.environ.get("VERCEL") and config.provider == cls.ProviderChoice.OLLAMA:
             config.provider = cls.ProviderChoice.API
-            config.api_base_url = config.api_base_url or "https://api.groq.com/openai/v1"
-            config.api_model = config.api_model or "llama-3.3-70b-versatile"
+
+        # Sync API config with env vars if DB has stale/empty values
+        if config.provider == cls.ProviderChoice.API:
+            if not config.api_base_url or config.api_base_url == "https://api.groq.com/openai/v1":
+                config.api_base_url = getattr(settings, "LLM_BASE_URL", config.api_base_url)
+            if not config.api_model or config.api_model in ("llama-3.3-70b-versatile", "meta/llama-3.3-70b-instruct"):
+                config.api_model = getattr(settings, "LLM_MODEL", config.api_model)
+            if not config.api_provider_name or config.api_provider_name == "groq":
+                config.api_provider_name = "nvidia"
         return config
 
     def save(self, *args, **kwargs) -> None:
