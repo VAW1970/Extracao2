@@ -6,6 +6,7 @@ Primarily used for NF-e (Nota Fiscal Eletrônica) XML parsing.
 """
 
 import logging
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -15,22 +16,14 @@ logger = logging.getLogger("apps.llm_service")
 class XMLPreprocessor:
     """Parse and extract structured data from XML files."""
 
-    def preprocess(self, file_path: str | Path) -> dict:
+    def preprocess(self, file_path: str | Path | BytesIO) -> dict:
         """Preprocess an XML file.
 
         Args:
-            file_path: Path to the XML file.
-
-        Returns:
-            dict with keys:
-                - text: the XML content as a string
-                - root_tag: the root element tag name
-                - element_count: number of elements in the tree
-                - parsed_data: simplified dict representation (for NF-e)
+            file_path: Path to the XML file or a BytesIO stream.
         """
         import xml.etree.ElementTree as ET
 
-        file_path = Path(file_path)
         result = {
             "text": None,
             "root_tag": None,
@@ -39,7 +32,7 @@ class XMLPreprocessor:
         }
 
         try:
-            tree = ET.parse(str(file_path))
+            tree = ET.parse(file_path)
             root = tree.getroot()
 
             result["root_tag"] = root.tag

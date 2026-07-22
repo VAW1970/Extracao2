@@ -8,6 +8,7 @@ for multimodal LLM processing.
 
 import logging
 from pathlib import Path
+from io import BytesIO
 
 logger = logging.getLogger("apps.llm_service")
 
@@ -15,22 +16,14 @@ logger = logging.getLogger("apps.llm_service")
 class PDFPreprocessor:
     """Extract text content from PDF files using pdfplumber."""
 
-    def preprocess(self, file_path: str | Path) -> dict:
+    def preprocess(self, file_path: str | Path | BytesIO) -> dict:
         """Preprocess a PDF file.
 
         Args:
-            file_path: Path to the PDF file.
-
-        Returns:
-            dict with keys:
-                - text: extracted text (str or None if no text found)
-                - is_scanned: bool indicating if the PDF appears scanned
-                - page_count: number of pages
-                - char_count: number of characters extracted
+            file_path: Path to the PDF file or a BytesIO stream.
         """
         import pdfplumber
 
-        file_path = Path(file_path)
         result = {
             "text": None,
             "is_scanned": False,
@@ -68,12 +61,11 @@ class PDFPreprocessor:
 
         return result
 
-    def get_image_bytes(self, file_path: str | Path) -> bytes:
-        """Get the raw bytes of a PDF page for multimodal LLM processing.
-
-        Converts the first page to an image for sending to a vision model.
-        """
-        # For now, return the raw PDF bytes — the multimodal LLM can handle PDFs directly
-        # In a future iteration, we could convert specific pages to images
-        with open(file_path, "rb") as f:
-            return f.read()
+    def get_image_bytes(self, file_path) -> bytes:
+        """Return raw bytes from PDF for multimodal LLM processing."""
+        if isinstance(file_path, (str, Path)):
+            with open(file_path, "rb") as f:
+                return f.read()
+        # Assumed BytesIO or file-like
+        file_path.seek(0)
+        return file_path.read()

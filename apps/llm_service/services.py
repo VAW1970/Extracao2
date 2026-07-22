@@ -8,10 +8,12 @@ import json
 import logging
 import time
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from apps.documentos.models import Documento, DadosExtraidos
@@ -46,16 +48,20 @@ def preprocess_document(documento: Documento) -> dict[str, Any]:
             - is_multimodal: whether the content is for a vision model
             - metadata: additional preprocessing info
     """
-    file_path = documento.arquivo_original.path
+    # Open via Django storage backend (downloads from Supabase in production).
+    # Use .open() which returns a file-like object the pre-processors can read.
+    file_obj = documento.arquivo_original.open("rb")
+    file_bytes = file_obj.read()
+    file_obj.close()
 
     if documento.formato_arquivo == Documento.FormatoArquivo.PDF:
         preprocessor = PDFPreprocessor()
-        result = preprocessor.preprocess(file_path)
+        result = preprocessor.preprocess(BytesIO(file_bytes))
 
         if result["is_scanned"]:
             # Scanned PDF — use multimodal LLM
             return {
-                "content": preprocessor.get_image_bytes(file_path),
+                "content": file_bytes,
                 "is_multimodal": True,
                 "metadata": result,
             }
@@ -69,7 +75,7 @@ def preprocess_document(documento: Documento) -> dict[str, Any]:
 
     elif documento.formato_arquivo == Documento.FormatoArquivo.XML:
         preprocessor = XMLPreprocessor()
-        result = preprocessor.preprocess(file_path)
+        result = preprocessor.preprocess(BytesIO(file_bytes))
         return {
             "content": result["text"],
             "is_multimodal": False,
@@ -78,7 +84,10 @@ def preprocess_document(documento: Documento) -> dict[str, Any]:
 
     elif documento.formato_arquivo == Documento.FormatoArquivo.IMAGEM:
         preprocessor = ImagePreprocessor()
-        result = preprocessor.preprocess(file_path)
+        result = preprocessor.preprocess(
+            BytesIO(file_bytes),
+            original_name=documento.arquivo_original.name,
+        )
         return {
             "content": result["image_bytes"],
             "is_multimodal": True,
