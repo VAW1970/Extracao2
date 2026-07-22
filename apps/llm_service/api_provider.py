@@ -27,7 +27,7 @@ class APIProvider(LLMProviderBase):
         self.api_key = api_key
         self.model = model
         self.default_model = model  # for text documents
-        self.vision_model = "llama-3.2-90b-vision-preview"  # for images
+        self.vision_model = "meta-llama/llama-4-scout-17b-16e-instruct"  # for images
         self.base_url = (base_url or "https://api.openai.com/v1").rstrip("/")
 
     def get_provider_name(self) -> str:
