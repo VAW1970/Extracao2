@@ -93,14 +93,14 @@ class APIProvider(LLMProviderBase):
             usage = result.get("usage", {})
             extracted["_metadata"] = {
                 "provider": "api",
-                "model": self.model,
+                "model": active_model,
                 "tempo_resposta_ms": elapsed_ms,
                 "tokens_utilizados": usage.get("total_tokens"),
             }
 
             logger.info(
                 f"API extraction completed in {elapsed_ms}ms "
-                f"using model {self.model}"
+                f"using model {active_model}"
             )
             return extracted
 
@@ -123,6 +123,13 @@ class APIProvider(LLMProviderBase):
         """Build messages for the OpenAI-compatible chat API."""
         if is_multimodal and isinstance(conteudo_documento, bytes):
             image_b64 = base64.b64encode(conteudo_documento).decode("utf-8")
+            # Detect image format by magic bytes
+            if conteudo_documento[:8] == b"\x89PNG\r\n\x1a\n":
+                image_mime = "image/png"
+            elif conteudo_documento[:3] == b"\xff\xd8\xff":
+                image_mime = "image/jpeg"
+            else:
+                image_mime = "image/jpeg"
             return [
                 {
                     "role": "system",
@@ -135,7 +142,7 @@ class APIProvider(LLMProviderBase):
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_b64}",
+                                "url": f"data:{image_mime};base64,{image_b64}",
                             },
                         },
                     ],
