@@ -23,7 +23,7 @@ class LLMConfig(models.Model):
     provider = models.CharField(
         max_length=10,
         choices=ProviderChoice.choices,
-        default=ProviderChoice.OLLAMA,
+        default=ProviderChoice.API,
         verbose_name="Provedor",
         help_text="Ollama para desenvolvimento local, API para produção.",
     )
@@ -109,8 +109,17 @@ class LLMConfig(models.Model):
 
     @classmethod
     def get_active(cls) -> "LLMConfig":
-        """Get or create the singleton config instance."""
+        """Get or create the singleton config instance.
+        
+        In production (Vercel), force API provider even if DB says ollama,
+        since Ollama cannot run in serverless environment.
+        """
+        import os
         config, _ = cls.objects.get_or_create(pk=1)
+        if os.environ.get("VERCEL") and config.provider == cls.ProviderChoice.OLLAMA:
+            config.provider = cls.ProviderChoice.API
+            config.api_base_url = config.api_base_url or "https://api.groq.com/openai/v1"
+            config.api_model = config.api_model or "llama-3.3-70b-versatile"
         return config
 
     def save(self, *args, **kwargs) -> None:

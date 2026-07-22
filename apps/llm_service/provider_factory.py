@@ -106,7 +106,19 @@ def get_llm_provider(testing: bool = False) -> LLMProviderBase:
         return OllamaProvider(host=host, model=model)
 
     elif provider_type == "api":
-        if db_config and db_config.is_configured and db_config.api_key:
+        # In production, always prefer env vars (LLM_API_KEY from Vercel dashboard)
+        is_production = os.environ.get("VERCEL", False)
+        
+        if is_production:
+            # Force env var usage in production — DB config may be stale (ollama default)
+            if not settings.LLM_API_KEY:
+                raise ValueError(
+                    "LLM_API_KEY must be set in Vercel environment variables."
+                )
+            api_key = settings.LLM_API_KEY
+            model = settings.LLM_MODEL
+            base_url = settings.LLM_BASE_URL
+        elif db_config and db_config.is_configured and db_config.api_key:
             api_key = db_config.api_key
             model = db_config.api_model
             base_url = db_config.api_base_url

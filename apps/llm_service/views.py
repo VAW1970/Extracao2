@@ -91,10 +91,17 @@ class LLMTestConnectionView(LoginRequiredMixin, View):
 
             elif provider_type == "api":
                 import httpx
+                import os
 
-                # Only use the stored API key from the database — never accept from client
-                api_key = config.api_key
-                base_url = config.api_base_url.rstrip("/")
+                # In production, use env var API key; otherwise use DB config
+                is_production = os.environ.get("VERCEL", False)
+                if is_production:
+                    from django.conf import settings as dj_settings
+                    api_key = dj_settings.LLM_API_KEY
+                    base_url = dj_settings.LLM_BASE_URL.rstrip("/")
+                else:
+                    api_key = config.api_key
+                    base_url = config.api_base_url.rstrip("/")
 
                 if not api_key:
                     return JsonResponse(
