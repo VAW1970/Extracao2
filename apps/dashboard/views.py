@@ -1,16 +1,13 @@
 """Views for the dashboard app."""
 
 import csv
-import io
 import json
 import logging
 from datetime import timedelta
 
-import json
-
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Avg, Count, F, IntegerField, Q
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, TruncDate
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views.generic import TemplateView
@@ -44,7 +41,18 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .order_by("tipo_documento")
         )
         context["por_tipo"] = list(tipo_qs)
-        context["por_tipo_json"] = json.dumps(list(tipo_qs), default=str)
+
+        # ── Timeline (last 30 days) ──
+        timeline_qs = (
+            Documento.objects.filter(data_upload__gte=thirty_days_ago)
+            .annotate(day=TruncDate("data_upload"))
+            .values("day")
+            .annotate(total=Count("id"))
+            .order_by("day")
+        )
+        timeline_data = list(timeline_qs)
+        context["timeline_labels"] = json.dumps([str(item["day"]) for item in timeline_data])
+        context["timeline_values"] = json.dumps([item["total"] for item in timeline_data])
 
         # ── LLM Usage Panel ──
         llm_stats = DadosExtraidos.objects.aggregate(
