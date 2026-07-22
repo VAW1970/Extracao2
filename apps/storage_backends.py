@@ -15,13 +15,12 @@ from urllib.parse import quote, urljoin
 
 import httpx
 from django.core.files.base import ContentFile
-from django.core.files.storage import BaseStorage
-from django.core.files.uploadedfile import UploadedFile
+from django.core.files.storage import Storage
 
 logger = logging.getLogger("apps.storage")
 
 
-class SupabaseStorage(BaseStorage):
+class SupabaseStorage(Storage):
     """Django storage backend that uses Supabase Storage via REST API.
 
     Configuration via environment variables:
