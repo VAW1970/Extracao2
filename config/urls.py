@@ -9,6 +9,12 @@ from django.http import HttpResponseRedirect
 from django.urls import include, path
 
 
+# ── Admin site branding ──
+admin.site.site_header = "Administração — Extração Contábil"
+admin.site.index_title = "Painel de Controle"
+admin.site.site_title = "Admin — Extração Contábil"
+
+
 def views_dashboard_redirect(request):
     """Redirect root URL to dashboard."""
     return HttpResponseRedirect("/dashboard/")
