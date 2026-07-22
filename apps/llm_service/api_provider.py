@@ -1,14 +1,13 @@
 """
-NVIDIA API LLM Provider — uses NVIDIA's OpenAI-compatible endpoint.
+External API LLM Provider — OpenAI-compatible endpoint (Groq, OpenAI, etc.).
 
-NVIDIA provides an OpenAI-compatible API at https://integrate.api.nvidia.com/v1
-with various models including vision-capable models.
-
-Configuration via environment variables:
-    NVIDIA_API_KEY    - API key from https://build.nvidia.com
-    NVIDIA_MODEL      - Text model (default: nvidia/nemotron-3-ultra)
-    NVIDIA_BASE_URL   - API base URL (default: https://integrate.api.nvidia.com/v1)
-    VISION_NVIDIA_MODEL - Vision model (default: meta/llama-3.2-90b-vision-instruct)
+Configurable via environment variables:
+    LLM_API_KEY       - API key for the provider
+    LLM_MODEL         - Text model (default: llama-3.3-70b-versatile for Groq)
+    LLM_BASE_URL      - API base URL (default: https://api.groq.com/openai/v1 for Groq)
+    VISION_LLM_MODEL  - Vision model for images (default: llama-3.2-90b-vision-preview for Groq)
+    VISION_LLM_BASE_URL - Optional separate endpoint for vision
+    VISION_LLM_API_KEY  - Optional separate API key for vision
 """
 
 import base64
@@ -22,24 +21,26 @@ from .provider_base import LLMExtractionError, LLMProviderBase
 
 logger = logging.getLogger("apps.llm_service")
 
-# NVIDIA API defaults
-NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
-NVIDIA_DEFAULT_MODEL = "nvidia/nemotron-3-ultra"
-NVIDIA_VISION_DEFAULT_MODEL = "meta/llama-3.2-90b-vision-instruct"
+# Groq defaults (OpenAI-compatible)
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile"
+GROQ_VISION_DEFAULT_MODEL = "llama-3.2-90b-vision-preview"
 
 
-class NVIDIAProvider(LLMProviderBase):
-    """LLM provider using NVIDIA's OpenAI-compatible API."""
+class APIProvider(LLMProviderBase):
+    """LLM provider using an OpenAI-compatible API (Groq, OpenAI, etc.)."""
 
     def __init__(self, api_key: str, model: str, base_url: str | None = None):
         self.api_key = api_key
-        self.model = model or NVIDIA_DEFAULT_MODEL
-        self.base_url = (base_url or NVIDIA_BASE_URL).rstrip("/")
+        self.model = model or GROQ_DEFAULT_MODEL
+        self.base_url = (base_url or GROQ_BASE_URL).rstrip("/")
         # Vision model for multimodal (images/scanned PDFs)
-        self.vision_model = os.environ.get("VISION_NVIDIA_MODEL", NVIDIA_VISION_DEFAULT_MODEL)
+        self.vision_model = os.environ.get("VISION_LLM_MODEL", GROQ_VISION_DEFAULT_MODEL)
+        self.vision_base_url = os.environ.get("VISION_LLM_BASE_URL", self.base_url).rstrip("/")
+        self.vision_api_key = os.environ.get("VISION_LLM_API_KEY", self.api_key)
 
     def get_provider_name(self) -> str:
-        return "nvidia"
+        return "api"
 
     def get_model_name(self) -> str:
         return self.model
@@ -51,18 +52,24 @@ class NVIDIAProvider(LLMProviderBase):
         schema_esperado: dict,
         is_multimodal: bool = False,
     ) -> dict[str, Any]:
-        """Extract data using NVIDIA API (OpenAI-compatible)."""
+        """Extract data using an OpenAI-compatible API."""
         import httpx
 
         start_time = time.time()
 
-        # Build messages
         messages = self._build_messages(
             conteudo_documento, prompt_template, is_multimodal
         )
 
-        # Select model based on modality
-        active_model = self.vision_model if is_multimodal else self.model
+        # Select model and endpoint based on modality
+        if is_multimodal:
+            active_model = self.vision_model
+            active_base_url = self.vision_base_url
+            active_api_key = self.vision_api_key
+        else:
+            active_model = self.model
+            active_base_url = self.base_url
+            active_api_key = self.api_key
 
         payload = {
             "model": active_model,
@@ -72,14 +79,14 @@ class NVIDIAProvider(LLMProviderBase):
         }
 
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {active_api_key}",
             "Content-Type": "application/json",
         }
 
         try:
             with httpx.Client(timeout=120.0) as client:
                 response = client.post(
-                    f"{self.base_url}/chat/completions",
+                    f"{active_base_url}/chat/completions",
                     json=payload,
                     headers=headers,
                 )
@@ -88,34 +95,31 @@ class NVIDIAProvider(LLMProviderBase):
             result = response.json()
             elapsed_ms = int((time.time() - start_time) * 1000)
 
-            # Parse the response
             content = result["choices"][0]["message"]["content"]
             extracted = self._parse_json_response(content)
 
-            # Add metadata
             usage = result.get("usage", {})
             extracted["_metadata"] = {
-                "provider": "nvidia",
+                "provider": "api",
                 "model": active_model,
                 "tempo_resposta_ms": elapsed_ms,
                 "tokens_utilizados": usage.get("total_tokens"),
             }
 
             logger.info(
-                f"NVIDIA extraction completed in {elapsed_ms}ms "
-                f"using model {active_model}"
+                f"API extraction completed in {elapsed_ms}ms using model {active_model}"
             )
             return extracted
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"NVIDIA HTTP error: {e.response.status_code} — {e.response.text}")
-            raise LLMExtractionError(f"NVIDIA returned error: {e.response.status_code}") from e
+            logger.error(f"API HTTP error: {e.response.status_code} — {e.response.text}")
+            raise LLMExtractionError(f"API returned error: {e.response.status_code}") from e
         except httpx.ConnectError:
-            logger.error("Cannot connect to NVIDIA API")
-            raise LLMExtractionError("Cannot connect to NVIDIA API. Check network and API key.")
+            logger.error("Cannot connect to API")
+            raise LLMExtractionError("Cannot connect to API. Check network and API key.")
         except (json.JSONDecodeError, KeyError, IndexError) as e:
-            logger.error(f"Failed to parse NVIDIA response: {e}")
-            raise LLMExtractionError("Invalid response from NVIDIA API") from e
+            logger.error(f"Failed to parse API response: {e}")
+            raise LLMExtractionError("Invalid response from API") from e
 
     def _parse_json_response(self, content: str) -> dict:
         """Parse JSON from LLM response, stripping markdown fences if present."""
@@ -174,3 +178,7 @@ class NVIDIAProvider(LLMProviderBase):
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": full_prompt},
             ]
+
+
+# Import base64 at module level
+import base64
