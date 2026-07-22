@@ -265,8 +265,8 @@ LLM_PROVIDER = env("LLM_PROVIDER")  # "ollama" or "api"
 OLLAMA_HOST = env("OLLAMA_HOST")
 OLLAMA_MODEL = env("OLLAMA_MODEL")
 LLM_API_KEY = env("LLM_API_KEY", default="")
-LLM_MODEL = env("LLM_MODEL", default="llama-3.3-70b-versatile")
-LLM_BASE_URL = env("LLM_BASE_URL", default="https://api.groq.com/openai/v1")
+LLM_MODEL = env("LLM_MODEL", default="gemini-1.5-flash")
+LLM_BASE_URL = env("LLM_BASE_URL", default="https://generativelanguage.googleapis.com/v1beta/openai")
 EXTRACTION_MAX_RETRIES = env("EXTRACTION_MAX_RETRIES")
 
 # ============================================================

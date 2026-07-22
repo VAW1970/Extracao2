@@ -1,8 +1,12 @@
 """
-External API LLM Provider.
+External API LLM Provider — Google Gemini (OpenAI-compatible endpoint).
 
-Mandatory in production (Vercel). Supports multimodal models via OpenAI-compatible API.
-Configurable via LLM_API_KEY and LLM_MODEL environment variables.
+Uses Gemini for both text extraction (gemini-1.5-flash) and multimodal
+extraction (gemini-1.5-flash) — same model handles text and images.
+Configurable via LLM_API_KEY, LLM_MODEL, LLM_BASE_URL env variables.
+
+Gemini provides an OpenAI-compatible endpoint:
+    https://generativelanguage.googleapis.com/v1beta/openai/
 """
 
 import base64
@@ -15,23 +19,25 @@ from .provider_base import LLMExtractionError, LLMProviderBase
 
 logger = logging.getLogger("apps.llm_service")
 
+# Gemini OpenAI-compatible endpoint
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+GEMINI_DEFAULT_MODEL = "gemini-1.5-flash"
+
 
 class APIProvider(LLMProviderBase):
-    """LLM provider using an external API (OpenAI, Anthropic, etc.).
+    """LLM provider using Google Gemini API (OpenAI-compatible endpoint).
 
-    This provider is mandatory in production on Vercel since Ollama
-    cannot run in a serverless environment.
+    Gemini supports both text and vision (images) in the same model,
+    so there is no need for a separate vision provider.
     """
 
     def __init__(self, api_key: str, model: str, base_url: str | None = None):
         self.api_key = api_key
-        self.model = model
-        self.default_model = model  # for text documents
-        self.vision_model = "meta-llama/llama-4-scout-17b-16e-instruct"  # for images
-        self.base_url = (base_url or "https://api.openai.com/v1").rstrip("/")
+        self.model = model or GEMINI_DEFAULT_MODEL
+        self.base_url = (base_url or GEMINI_BASE_URL).rstrip("/")
 
     def get_provider_name(self) -> str:
-        return "api"
+        return "gemini"
 
     def get_model_name(self) -> str:
         return self.model
@@ -53,15 +59,15 @@ class APIProvider(LLMProviderBase):
             conteudo_documento, prompt_template, is_multimodal
         )
 
-        # Use vision model for multimodal content (images)
-        active_model = self.vision_model if is_multimodal else self.default_model
-        # Vision models may not support json_object response_format
+        # Gemini supports both text and vision in the same model.
+        # Use response_format=json_object only for text (Gemini may not
+        # support it for multimodal responses).
         response_format = (
-            None if is_multimodal else {"type": "json_object"}
+            {"type": "json_object"} if not is_multimodal else None
         )
 
         payload = {
-            "model": active_model,
+            "model": self.model,
             "messages": messages,
             "temperature": 0.1,
         }
@@ -85,34 +91,41 @@ class APIProvider(LLMProviderBase):
             result = response.json()
             elapsed_ms = int((time.time() - start_time) * 1000)
 
-            # Parse the response
+            # Parse the response — Gemini may wrap JSON in markdown, strip it
             content = result["choices"][0]["message"]["content"]
+            # Remove markdown code fences if present
+            if content.startswith("```"):
+                content = content.split("```", 2)
+                content = content[1] if len(content) > 1 else content[0]
+                # Remove optional "json" language tag
+                if content.lower().startswith("json"):
+                    content = content[4:].strip()
             extracted = json.loads(content)
 
             # Add metadata
             usage = result.get("usage", {})
             extracted["_metadata"] = {
-                "provider": "api",
-                "model": active_model,
+                "provider": "gemini",
+                "model": self.model,
                 "tempo_resposta_ms": elapsed_ms,
                 "tokens_utilizados": usage.get("total_tokens"),
             }
 
             logger.info(
-                f"API extraction completed in {elapsed_ms}ms "
-                f"using model {active_model}"
+                f"Gemini extraction completed in {elapsed_ms}ms "
+                f"using model {self.model}"
             )
             return extracted
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"API HTTP error: {e.response.status_code} — {e.response.text}")
-            raise LLMExtractionError(f"API returned error: {e.response.status_code}") from e
+            logger.error(f"Gemini HTTP error: {e.response.status_code} — {e.response.text}")
+            raise LLMExtractionError(f"Gemini returned error: {e.response.status_code}") from e
         except httpx.ConnectError:
-            logger.error("Cannot connect to LLM API")
-            raise LLMExtractionError("Cannot connect to LLM API. Check network and API key.")
+            logger.error("Cannot connect to Gemini API")
+            raise LLMExtractionError("Cannot connect to Gemini API. Check network and API key.")
         except (json.JSONDecodeError, KeyError, IndexError) as e:
-            logger.error(f"Failed to parse API response: {e}")
-            raise LLMExtractionError("Invalid response from LLM API") from e
+            logger.error(f"Failed to parse Gemini response: {e}")
+            raise LLMExtractionError("Invalid response from Gemini API") from e
 
     def _build_messages(
         self,
