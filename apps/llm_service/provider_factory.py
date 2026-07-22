@@ -13,7 +13,7 @@ import os
 
 from django.conf import settings
 
-from .api_provider import APIProvider
+from .nvidia_provider import NVIDIAProvider
 from .ollama_provider import OllamaProvider
 from .provider_base import LLMProviderBase
 
@@ -74,24 +74,17 @@ def get_llm_provider(testing: bool = False) -> LLMProviderBase:
         return MockProvider()
 
     # Try to load config from database first, fallback to env vars.
-    # In production (Vercel), ALWAYS use env vars — DB config may be stale.
     db_config = None
     provider_type = settings.LLM_PROVIDER
-    is_production = os.environ.get("VERCEL", False) or os.environ.get("ENVIRONMENT") == "production"
 
-    if not is_production:
-        try:
-            from .models import LLMConfig
-            db_config = LLMConfig.get_active()
-            if db_config.is_configured:
-                provider_type = db_config.provider
-        except (ImportError, LookupError, Exception) as exc:
-            logger.debug(f"Could not load LLMConfig from database, using env vars: {exc}")
-            pass
-
-    # In production, force provider_type to "api" regardless of DB config
-    if is_production:
-        provider_type = "api"
+    try:
+        from .models import LLMConfig
+        db_config = LLMConfig.get_active()
+        if db_config.is_configured:
+            provider_type = db_config.provider
+    except (ImportError, LookupError, Exception) as exc:
+        logger.debug(f"Could not load LLMConfig from database, using env vars: {exc}")
+        pass
 
     if provider_type == "ollama":
         # Block Ollama in production
@@ -113,34 +106,18 @@ def get_llm_provider(testing: bool = False) -> LLMProviderBase:
         return OllamaProvider(host=host, model=model)
 
     elif provider_type == "api":
-        # In production, always prefer env vars (LLM_API_KEY from Vercel dashboard)
-        is_production = os.environ.get("VERCEL", False)
-        
-        if is_production:
-            # Force env var usage in production — DB config may be stale (ollama default)
-            if not settings.LLM_API_KEY:
-                raise ValueError(
-                    "LLM_API_KEY must be set in Vercel environment variables."
-                )
-            api_key = settings.LLM_API_KEY
-            model = settings.LLM_MODEL
-            base_url = settings.LLM_BASE_URL
-        elif db_config and db_config.is_configured and db_config.api_key:
+        # Use DB config if available, otherwise env vars.
+        if db_config and db_config.is_configured and db_config.api_key:
             api_key = db_config.api_key
             model = db_config.api_model
             base_url = db_config.api_base_url
         else:
-            if not settings.LLM_API_KEY:
-                raise ValueError(
-                    "LLM_API_KEY must be set when using the API provider. "
-                    "Configure it in your environment variables or via the LLM config page."
-                )
             api_key = settings.LLM_API_KEY
             model = settings.LLM_MODEL
             base_url = settings.LLM_BASE_URL
 
-        logger.info(f"Using API provider with model {model} at {base_url}")
-        provider = APIProvider(api_key=api_key, model=model, base_url=base_url)
+        logger.info(f"Using NVIDIA provider with model {model} at {base_url}")
+        provider = NVIDIAProvider(api_key=api_key, model=model, base_url=base_url)
         return provider
 
     else:

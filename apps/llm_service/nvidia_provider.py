@@ -1,13 +1,14 @@
 """
-External API LLM Provider — LM Studio (OpenAI-compatible endpoint).
+NVIDIA API LLM Provider — uses NVIDIA's OpenAI-compatible endpoint.
 
-LM Studio runs models locally (or via tunnel) and exposes an OpenAI-compatible
-API at http://localhost:1234/v1. Supports both text and vision (multimodal)
-models.
+NVIDIA provides an OpenAI-compatible API at https://integrate.api.nvidia.com/v1
+with various models including vision-capable models.
 
-Configuration via LLM_API_KEY, LLM_MODEL, LLM_BASE_URL env variables.
-For vision (images), a separate model can be configured via
-VISION_LLM_MODEL — defaults to MiniCPM-V 2.6.
+Configuration via environment variables:
+    NVIDIA_API_KEY    - API key from https://build.nvidia.com
+    NVIDIA_MODEL      - Text model (default: nvidia/nemotron-3-ultra)
+    NVIDIA_BASE_URL   - API base URL (default: https://integrate.api.nvidia.com/v1)
+    VISION_NVIDIA_MODEL - Vision model (default: meta/llama-3.2-90b-vision-instruct)
 """
 
 import base64
@@ -21,29 +22,24 @@ from .provider_base import LLMExtractionError, LLMProviderBase
 
 logger = logging.getLogger("apps.llm_service")
 
-# LM Studio default endpoint (OpenAI-compatible)
-LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
-LMSTUDIO_DEFAULT_MODEL = "local-model"
-VISION_DEFAULT_MODEL = "minicpm-v-2.6"
+# NVIDIA API defaults
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+NVIDIA_DEFAULT_MODEL = "nvidia/nemotron-3-ultra"
+NVIDIA_VISION_DEFAULT_MODEL = "meta/llama-3.2-90b-vision-instruct"
 
 
-class APIProvider(LLMProviderBase):
-    """LLM provider using LM Studio (OpenAI-compatible endpoint).
-
-    LM Studio supports both text and vision models. The vision model
-    (MiniCPM-V 2.6 by default) is used for image/document extraction,
-    while the text model handles XML and text-based PDFs.
-    """
+class NVIDIAProvider(LLMProviderBase):
+    """LLM provider using NVIDIA's OpenAI-compatible API."""
 
     def __init__(self, api_key: str, model: str, base_url: str | None = None):
-        self.api_key = api_key or "lm-studio"
-        self.model = model or LMSTUDIO_DEFAULT_MODEL
-        self.base_url = (base_url or LMSTUDIO_BASE_URL).rstrip("/")
+        self.api_key = api_key
+        self.model = model or NVIDIA_DEFAULT_MODEL
+        self.base_url = (base_url or NVIDIA_BASE_URL).rstrip("/")
         # Vision model for multimodal (images/scanned PDFs)
-        self.vision_model = os.environ.get("VISION_LLM_MODEL", VISION_DEFAULT_MODEL)
+        self.vision_model = os.environ.get("VISION_NVIDIA_MODEL", NVIDIA_VISION_DEFAULT_MODEL)
 
     def get_provider_name(self) -> str:
-        return "lmstudio"
+        return "nvidia"
 
     def get_model_name(self) -> str:
         return self.model
@@ -55,7 +51,7 @@ class APIProvider(LLMProviderBase):
         schema_esperado: dict,
         is_multimodal: bool = False,
     ) -> dict[str, Any]:
-        """Extract data using LM Studio (OpenAI-compatible API)."""
+        """Extract data using NVIDIA API (OpenAI-compatible)."""
         import httpx
 
         start_time = time.time()
@@ -72,6 +68,7 @@ class APIProvider(LLMProviderBase):
             "model": active_model,
             "messages": messages,
             "temperature": 0.1,
+            "max_tokens": 4096,
         }
 
         headers = {
@@ -91,54 +88,43 @@ class APIProvider(LLMProviderBase):
             result = response.json()
             elapsed_ms = int((time.time() - start_time) * 1000)
 
-            # Parse the response — LM Studio may wrap JSON in markdown, strip it
+            # Parse the response
             content = result["choices"][0]["message"]["content"]
             extracted = self._parse_json_response(content)
 
             # Add metadata
             usage = result.get("usage", {})
             extracted["_metadata"] = {
-                "provider": "lmstudio",
+                "provider": "nvidia",
                 "model": active_model,
                 "tempo_resposta_ms": elapsed_ms,
                 "tokens_utilizados": usage.get("total_tokens"),
             }
 
             logger.info(
-                f"LM Studio extraction completed in {elapsed_ms}ms "
+                f"NVIDIA extraction completed in {elapsed_ms}ms "
                 f"using model {active_model}"
             )
             return extracted
 
         except httpx.HTTPStatusError as e:
-            logger.error(
-                f"LM Studio HTTP error: {e.response.status_code} — {e.response.text}"
-            )
-            raise LLMExtractionError(
-                f"LM Studio returned error: {e.response.status_code}"
-            ) from e
+            logger.error(f"NVIDIA HTTP error: {e.response.status_code} — {e.response.text}")
+            raise LLMExtractionError(f"NVIDIA returned error: {e.response.status_code}") from e
         except httpx.ConnectError:
-            logger.error("Cannot connect to LM Studio server")
-            raise LLMExtractionError(
-                "Cannot connect to LM Studio. Check if it's running and reachable."
-            ) from e
+            logger.error("Cannot connect to NVIDIA API")
+            raise LLMExtractionError("Cannot connect to NVIDIA API. Check network and API key.")
         except (json.JSONDecodeError, KeyError, IndexError) as e:
-            logger.error(f"Failed to parse LM Studio response: {e}")
-            raise LLMExtractionError("Invalid response from LM Studio") from e
+            logger.error(f"Failed to parse NVIDIA response: {e}")
+            raise LLMExtractionError("Invalid response from NVIDIA API") from e
 
     def _parse_json_response(self, content: str) -> dict:
         """Parse JSON from LLM response, stripping markdown fences if present."""
         content = content.strip()
 
-        # Remove markdown code fences if present
         if content.startswith("```"):
-            # Split by ``` and take the middle part
             parts = content.split("```")
             if len(parts) >= 3:
                 content = parts[1].strip()
-            else:
-                content = parts[0].strip()
-            # Remove optional "json" language tag
             if content.lower().startswith("json"):
                 content = content[4:].strip()
 
@@ -150,7 +136,7 @@ class APIProvider(LLMProviderBase):
         prompt_template: str,
         is_multimodal: bool,
     ) -> list[dict]:
-        """Build messages for the OpenAI-compatible chat API."""
+        """Build messages for OpenAI-compatible chat API."""
         system_msg = (
             "Você é um assistente especializado em extração de dados de "
             "documentos contábeis brasileiros. Responda APENAS com JSON "
@@ -159,7 +145,7 @@ class APIProvider(LLMProviderBase):
 
         if is_multimodal and isinstance(conteudo_documento, bytes):
             image_b64 = base64.b64encode(conteudo_documento).decode("utf-8")
-            # Detect image format by magic bytes
+            # Detect image format
             if conteudo_documento[:8] == b"\x89PNG\r\n\x1a\n":
                 image_mime = "image/png"
             elif conteudo_documento[:3] == b"\xff\xd8\xff":
@@ -176,17 +162,14 @@ class APIProvider(LLMProviderBase):
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:{image_mime};base64,{image_b64}",
+                                "url": f"data:{image_mime};base64,{image_b64}"
                             },
                         },
                     ],
                 },
             ]
         else:
-            full_prompt = (
-                f"{prompt_template}\n\n---\nConteúdo do documento:\n"
-                f"{conteudo_documento}"
-            )
+            full_prompt = f"{prompt_template}\n\n---\nConteúdo do documento:\n{conteudo_documento}"
             return [
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": full_prompt},

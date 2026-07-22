@@ -265,8 +265,9 @@ LLM_PROVIDER = env("LLM_PROVIDER")  # "ollama" or "api"
 OLLAMA_HOST = env("OLLAMA_HOST")
 OLLAMA_MODEL = env("OLLAMA_MODEL")
 LLM_API_KEY = env("LLM_API_KEY", default="")
-LLM_MODEL = env("LLM_MODEL", default="gemini-1.5-flash")
-LLM_BASE_URL = env("LLM_BASE_URL", default="https://generativelanguage.googleapis.com/v1beta/openai")
+LLM_MODEL = env("LLM_MODEL", default="nvidia/nemotron-3-ultra")
+LLM_BASE_URL = env("LLM_BASE_URL", default="https://integrate.api.nvidia.com/v1")
+VISION_LLM_MODEL = env("VISION_LLM_MODEL", default="meta/llama-3.2-90b-vision-instruct")
 EXTRACTION_MAX_RETRIES = env("EXTRACTION_MAX_RETRIES")
 
 # ============================================================

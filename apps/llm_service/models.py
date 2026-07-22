@@ -45,13 +45,13 @@ class LLMConfig(models.Model):
     # ── External API settings ──
     api_provider_name = models.CharField(
         max_length=64,
-        default="gemini",
+        default="nvidia",
         verbose_name="Nome do Provedor API",
-        help_text="Identificador do provedor (ex: gemini, openai, anthropic).",
+        help_text="Identificador do provedor (ex: nvidia, openai, anthropic).",
     )
     api_base_url = models.URLField(
         max_length=255,
-        default="https://generativelanguage.googleapis.com/v1beta/openai",
+        default="https://integrate.api.nvidia.com/v1",
         verbose_name="URL Base da API",
         help_text="Endpoint base da API (compatível com OpenAI).",
     )
@@ -64,7 +64,7 @@ class LLMConfig(models.Model):
     )
     api_model = models.CharField(
         max_length=128,
-        default="gemini-1.5-flash",
+        default="nvidia/nemotron-3-ultra",
         verbose_name="Modelo da API",
         help_text="Nome do modelo a usar na API externa.",
     )
