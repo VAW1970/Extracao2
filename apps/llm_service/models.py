@@ -64,7 +64,7 @@ class LLMConfig(models.Model):
     )
     api_model = models.CharField(
         max_length=128,
-        default="nvidia/nemotron-3-ultra",
+        default="nvidia/nemotron-3-ultra-550b-a55b",
         verbose_name="Modelo da API",
         help_text="Nome do modelo a usar na API externa.",
     )
