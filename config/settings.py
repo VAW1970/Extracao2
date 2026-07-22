@@ -57,6 +57,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "config",
     "apps.usuarios",
     "apps.documentos",
     "apps.validacao",

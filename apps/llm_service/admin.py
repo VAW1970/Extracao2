@@ -9,29 +9,15 @@ class LLMConfigAdmin(admin.ModelAdmin):
     list_display_links = ("provider", "active_model")
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
-        ("Provedor", {
-            "fields": ("provider",),
-        }),
-        ("Ollama (desenvolvimento local)", {
-            "fields": ("ollama_host", "ollama_model"),
-            "classes": ("collapse",),
-        }),
-        ("API Externa (produção)", {
-            "fields": ("api_provider_name", "api_base_url", "api_key", "api_model"),
-        }),
-        ("Configurações gerais", {
-            "fields": ("max_retries", "timeout_seconds"),
-        }),
-        ("Metadados", {
-            "fields": ("created_at", "updated_at"),
-            "classes": ("collapse",),
-        }),
+        ("Provedor", {"fields": ("provider",)}),
+        ("Ollama (desenvolvimento local)", {"fields": ("ollama_host", "ollama_model"), "classes": ("collapse",)}),
+        ("API Externa (produção)", {"fields": ("api_provider_name", "api_base_url", "api_key", "api_model")}),
+        ("Configurações gerais", {"fields": ("max_retries", "timeout_seconds")}),
+        ("Metadados", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
 
     def has_add_permission(self, request):
-        """Only one config instance should exist."""
         return not LLMConfig.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
-        """Config should never be deleted."""
         return False
