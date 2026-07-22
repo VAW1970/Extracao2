@@ -62,7 +62,7 @@ class LLMConfig(models.Model):
         verbose_name="Chave de API",
         help_text="Chave secreta da API. Armazenada criptografada no banco.",
     )
-    api_model = models.CharField(
+api_model = models.CharField(
         max_length=128,
         default="nvidia/nemotron-3-ultra-550b-a55b",
         verbose_name="Modelo da API",
