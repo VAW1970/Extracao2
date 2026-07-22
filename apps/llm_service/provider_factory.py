@@ -13,7 +13,7 @@ import os
 
 from django.conf import settings
 
-from .nvidia_provider import NVIDIAProvider
+from .api_provider import APIProvider
 from .ollama_provider import OllamaProvider
 from .provider_base import LLMProviderBase
 
@@ -117,7 +117,7 @@ def get_llm_provider(testing: bool = False) -> LLMProviderBase:
             base_url = settings.LLM_BASE_URL
 
         logger.info(f"Using NVIDIA provider with model {model} at {base_url}")
-        provider = NVIDIAProvider(api_key=api_key, model=model, base_url=base_url)
+        provider = APIProvider(api_key=api_key, model=model, base_url=base_url)
         return provider
 
     else:
