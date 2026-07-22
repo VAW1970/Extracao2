@@ -178,7 +178,3 @@ class APIProvider(LLMProviderBase):
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": full_prompt},
             ]
-
-
-# Import base64 at module level
-import base64
