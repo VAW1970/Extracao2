@@ -73,18 +73,25 @@ def get_llm_provider(testing: bool = False) -> LLMProviderBase:
         logger.info("Using MockProvider for testing")
         return MockProvider()
 
-    # Try to load config from database first, fallback to env vars
+    # Try to load config from database first, fallback to env vars.
+    # In production (Vercel), ALWAYS use env vars — DB config may be stale.
     db_config = None
     provider_type = settings.LLM_PROVIDER
-    try:
-        from .models import LLMConfig
-        db_config = LLMConfig.get_active()
-        if db_config.is_configured:
-            provider_type = db_config.provider
-    except (ImportError, LookupError, Exception) as exc:
-        # Database not migrated yet, table missing, or model doesn't exist — use env vars
-        logger.debug(f"Could not load LLMConfig from database, using env vars: {exc}")
-        pass
+    is_production = os.environ.get("VERCEL", False) or os.environ.get("ENVIRONMENT") == "production"
+
+    if not is_production:
+        try:
+            from .models import LLMConfig
+            db_config = LLMConfig.get_active()
+            if db_config.is_configured:
+                provider_type = db_config.provider
+        except (ImportError, LookupError, Exception) as exc:
+            logger.debug(f"Could not load LLMConfig from database, using env vars: {exc}")
+            pass
+
+    # In production, force provider_type to "api" regardless of DB config
+    if is_production:
+        provider_type = "api"
 
     if provider_type == "ollama":
         # Block Ollama in production
