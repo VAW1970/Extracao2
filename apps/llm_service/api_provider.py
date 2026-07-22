@@ -26,6 +26,8 @@ class APIProvider(LLMProviderBase):
     def __init__(self, api_key: str, model: str, base_url: str | None = None):
         self.api_key = api_key
         self.model = model
+        self.default_model = model  # for text documents
+        self.vision_model = "llama-3.2-90b-vision-preview"  # for images
         self.base_url = (base_url or "https://api.openai.com/v1").rstrip("/")
 
     def get_provider_name(self) -> str:
@@ -51,12 +53,20 @@ class APIProvider(LLMProviderBase):
             conteudo_documento, prompt_template, is_multimodal
         )
 
+        # Use vision model for multimodal content (images)
+        active_model = self.vision_model if is_multimodal else self.default_model
+        # Vision models may not support json_object response_format
+        response_format = (
+            None if is_multimodal else {"type": "json_object"}
+        )
+
         payload = {
-            "model": self.model,
+            "model": active_model,
             "messages": messages,
-            "response_format": {"type": "json_object"},
             "temperature": 0.1,
         }
+        if response_format:
+            payload["response_format"] = response_format
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
