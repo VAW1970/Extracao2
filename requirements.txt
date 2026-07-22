@@ -22,7 +22,7 @@ whitenoise>=6.5,<7
 pytest>=8.0,<9
 pytest-django>=4.8,<5
 
-# HTTP client (used by LLM providers)
+# HTTP client (used by LLM providers and Supabase Storage API)
 httpx>=0.27,<1
 
 # Logging

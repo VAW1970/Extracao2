@@ -5,7 +5,6 @@ Configured for deployment on Vercel with Neon PostgreSQL.
 
 import os
 from pathlib import Path
-
 import environ
 
 # ============================================================
@@ -164,15 +163,30 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # WhiteNoise serves static files directly from STATICFILES_DIRS in production,
 # so we don't need collectstatic. STATIC_ROOT is kept for dev fallback.
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-    },
-    "default": {
-        # In dev: filesystem. In prod: overridden to Vercel Blob via env.
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-}
+IS_SUPABASE_CONFIGURED = bool(
+    os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+)
+
+if IS_SUPABASE_CONFIGURED:
+    # Production: Supabase Storage via REST API (serverless-friendly)
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+        "default": {
+            "BACKEND": "apps.storage_backends.SupabaseStorage",
+        },
+    }
+else:
+    # Development: local filesystem
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+    }
 
 # Tell WhiteNoise to serve files from STATICFILES_DIRS directly.
 WHITENOISE_ROOT = BASE_DIR / "static"
