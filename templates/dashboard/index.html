@@ -46,8 +46,11 @@
                     <i class="bi bi-graph-up"></i> Volume de Documentos (Últimos 30 dias)
                 </div>
                 <div class="card-body" style="min-height: 350px;">
-                    <div class="chart-container">
+                    <div class="chart-container" style="width: 100%; height: 300px;">
                         <canvas id="timelineChart"></canvas>
+                        <div id="timelineError" class="text-danger text-center py-3 d-none">
+                            <i class="bi bi-exclamation-triangle"></i> Erro ao carregar gráfico. Verifique console (F12).
+                        </div>
                     </div>
                 </div>
             </div>
@@ -58,8 +61,11 @@
                     <i class="bi bi-pie-chart"></i> Por Tipo de Documento
                 </div>
                 <div class="card-body" style="min-height: 350px;">
-                    <div class="chart-container">
+                    <div class="chart-container" style="width: 100%; height: 300px;">
                         <canvas id="tipoChart"></canvas>
+                        <div id="tipoError" class="text-danger text-center py-3 d-none">
+                            <i class="bi bi-exclamation-triangle"></i> Erro ao carregar gráfico.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -262,6 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Timeline chart initialized');
         } catch (e) {
             console.error('Timeline chart error:', e);
+            document.getElementById('timelineError')?.classList.remove('d-none');
+            timelineCtx.style.display = 'none';
         }
     }
 
@@ -301,6 +309,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Tipo chart initialized');
         } catch (e) {
             console.error('Tipo chart error:', e);
+            document.getElementById('tipoError')?.classList.remove('d-none');
+            tipoCtx.style.display = 'none';
         }
     }
 });

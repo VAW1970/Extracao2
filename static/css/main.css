@@ -669,6 +669,7 @@ a.sidebar-link.active:focus {
 /* ── Charts ── */
 .chart-container {
     position: relative;
+    width: 100%;
     height: 300px;
 }
 
