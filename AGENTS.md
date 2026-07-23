@@ -105,6 +105,7 @@ DJANGO_ALLOWED_HOSTS=.vercel.app
 - **Ordem Sidebar**: Usuários → Documentos → Validação → LLM → Auth
 - **Templates**: `templates/admin/base.html` (sem sidebar nativo, cards por app)
 - **CSS**: `static/css/admin.css` (Cormorant Garamond + Inter, gold/navy)
+- **Design System**: Documentado em `DESIGN.md` (cores, tipografia, componentes, responsividade)
 
 ---
 
@@ -149,6 +150,13 @@ venv/bin/pytest tests/test_llm_service.py -v
 3. **Supabase Storage** — Requer `SERVICE_ROLE_KEY` (não anon key)
 4. **Admin customizado** — Não usa `django.contrib.admin` padrão; mudanças exigem editar `config/admin_site.py` + `templates/admin/`
 5. **XML NF-e** — `XMLPreprocessor` usa `lxml` + fallback `xml.etree` (stdlib) p/ compatibilidade
+
+---
+
+## Documentação de Design
+
+- **DESIGN.md** — Design System completo (cores, tipografia, espaçamento, componentes, responsividade, checklist de implementação)
+- **MEMORY.md** — Histórico de ajustes e melhorias para replicação
 
 ---
 
