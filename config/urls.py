@@ -4,9 +4,10 @@ Root URL configuration for extracao_contabil project.
 
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import include, path
+
+from .admin_site import admin_site
 
 
 def views_dashboard_redirect(request):
@@ -15,7 +16,7 @@ def views_dashboard_redirect(request):
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("admin/", admin_site.urls),
     path("usuarios/", include("apps.usuarios.urls")),
     path("documentos/", include("apps.documentos.urls")),
     path("validacao/", include("apps.validacao.urls")),

@@ -3,7 +3,6 @@ from django.contrib import admin
 from .models import LLMConfig
 
 
-@admin.register(LLMConfig)
 class LLMConfigAdmin(admin.ModelAdmin):
     list_display = ("provider", "active_model", "is_configured", "updated_at")
     list_display_links = ("provider", "active_model")

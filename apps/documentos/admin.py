@@ -3,7 +3,6 @@ from django.contrib import admin
 from .models import Documento, DadosExtraidos
 
 
-@admin.register(Documento)
 class DocumentoAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -22,7 +21,6 @@ class DocumentoAdmin(admin.ModelAdmin):
     ordering = ("-data_upload",)
 
 
-@admin.register(DadosExtraidos)
 class DadosExtraidosAdmin(admin.ModelAdmin):
     list_display = (
         "id",

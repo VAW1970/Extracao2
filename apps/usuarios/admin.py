@@ -4,7 +4,6 @@ from django.contrib.auth.admin import UserAdmin
 from .models import Usuario
 
 
-@admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
     """Admin configuration for custom Usuario model."""
 
