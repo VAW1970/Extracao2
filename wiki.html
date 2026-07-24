@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Extracao2 – Wiki Técnica</title>
+<style>
+  body{font-family:Inter,system-ui,sans-serif;line-height:1.6;margin:0;padding:2rem;background:#fafafa;color:#222}
+  h1,h2,h3,h4{font-family:'Cormorant Garamond',Georgia,serif;color:#1b2838}
+  a{color:#c9a84c;text-decoration:none} a:hover{text-decoration:underline}
+  pre{background:#f4f4f4;padding:1rem;overflow:auto;border-radius:6px}
+  code{background:#f4f4f4;padding:.2rem .4rem;border-radius:4px}
+  .toc{background:#fff;border:1px solid #e0e0e0;padding:1rem;border-radius:6px;margin-bottom:2rem}
+  .toc ul{list-style:none;padding-left:1.2rem}
+  .toc li::before{content:"▸ ";color:#c9a84c}
+  .mermaid{background:#fff;border:1px solid #e0e0e0;padding:1rem;border-radius:6px}
+  .section{margin-bottom:3rem}
+  .badge{display:inline-block;padding:.15rem .5rem;border-radius:999px;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .badge-primary{background:#c9a84c;color:#1b2838}
+  .badge-secondary{background:#1b2838;color:#fff}
+  .badge-success{background:#16a34a;color:#fff}
+  .badge-warning{background:#f59e0b;color:#fff}
+  .badge-danger{background:#dc2626;color:#fff}
+  table{width:100%;border-collapse:collapse;margin:1rem 0}
+  th,td{border:1px solid #ddd;padding:.5rem .75rem;text-align:left}
+  th{background:#f5f0e8}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:'default'});</script>
+</head>
+<body>
+
+<h1>Extracao2 – Documentação Técnica (Wiki)</h1>
+<p>Versão gerada em <strong>2026‑07‑24</strong> a partir do repositório <a href="https://github.com/VAW1970/Extracao2">VAW1970/Extracao2</a>.</p>
+
+<div class="toc">
+<h2>Sumário</h2>
+<ul>
+<li><a href="#visao-geral">1. Visão Geral da Arquitetura</a></li>
+<li><a href="#modulos">2. Módulos / Apps Django</a></li>
+<li><a href="#fluxos">3. Fluxos de Execução</a></li>
+<li><a href="#relacoes">4. Relações entre Arquivos</a></li>
+<li><a href="#diagramas">5. Diagramas & Navegação</a></li>
+<li><a href="#deploy">6. Deploy & Configuração de Produção</a></li>
+<li><a href="#testes">7. Testes</a></li>
+</ul>
+</div>
+
+<!-- ============================================================ -->
+<section id="visao-geral" class="section">
+<h2>1. Visão Geral da Arquitetura <span class="badge badge-primary">overview</span></h2>
+
+<p><strong>Extracao2</strong> é um sistema de <em>pré‑processamento contábil</em> construído sobre:</p>
+<ul>
+<li><strong>Backend:</strong> Django 5.1 (LTS) – <code>python manage.py runserver</code> local; <strong>Vercel Functions</strong> (Python) em produção.</li>
+<li><strong>Banco de dados:</strong> PostgreSQL hospedado no <strong>Neon</strong> (branch <code>vercel-dev</code> p/ preview, <code>production</code> p/ prod). Driver <code>psycopg v3</code>.</li>
+<li><strong>Armazenamento de arquivos:</strong> <strong>Supabase Storage</strong> (bucket <code>Via.extracao</code>) via <code>django‑storages</code> (S3‑compatível).</li>
+<li><strong>LLM:</strong> NVIDIA API (endpoint OpenAI‑compatível <code>https://integrate.api.nvidia.com/v1</code>)  
+ – Texto: <code>nvidia/nemotron-3-ultra-550b-a55b</code>  
+ – Visão: <code>meta/llama-3.2-90b-vision-instruct</code>  
+ – Ollama apenas em desenvolvimento local.</li>
+<li><strong>Frontend:</strong> Django Templates + Bootstrap 5.3 + Chart.js (gráficos).</li>
+<li><strong>Autenticação:</strong> Custom User Model <code>usuarios.Usuario</code> (<code>AUTH_USER_MODEL</code>).</li>
+<li><strong>Testes:</strong> pytest‑django + mocks (sem chamadas reais de rede).</li>
+</ul>
+
+<div class="mermaid">
+flowchart TD
+  UI["Browser"]
+  Django["Django 5.1"]
+  DB[("Neon Postgres")]
+  S3[("Supabase Storage")]
+  LLM["NVIDIA LLM API"]
+  UI --> Django
+  Django --> DB
+  Django --> S3
+  Django --> LLM
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="modulos" class="section">
+<h2>2. Módulos / Apps Django <span class="badge badge-secondary">apps</span></h2>
+
+<table>
+<tr><th>App</th><th>Responsabilidade</th><th>Principais Models / Views</th></tr>
+<tr><td><code>usuarios</code></td><td>Custom User Model (<code>Usuario</code>) + auth views (login, logout, perfil).</td><td><code>Usuario</code> (extends <code>AbstractUser</code>)</td></tr>
+<tr><td><code>documentos</code></td><td>Upload, listagem e metadados de documentos (PDF, imagem, XML).</td><td><code>Documento</code>, <code>DadosExtraidos</code></td></tr>
+<tr><td><code>validacao</code></td><td>Fila de validação humana, logs de decisão, lançamento preparado.</td><td><code>ValidacaoLog</code>, <code>LancamentoPreparado</code></td></tr>
+<tr><td><code>dashboard</code></td><td>Dashboard com gráficos (Chart.js), exportação CSV, página de ajuda.</td><td><code>DashboardView</code>, <code>ExportCSVView</code>, <code>AjudaView</code></td></tr>
+<tr><td><code>llm_service</code></td><td>Pipeline de extração: preprocess → prompt → LLM → validação → persistência; admin de configuração do provedor.</td><td><code>LLMConfig</code>, <code>APIProvider</code>, <code>OllamaProvider</code>, <code>provider_factory</code>, <code>validacao_schema</code></td></tr>
+<tr><td><code>config</code></td><td>Settings, URLs raiz, <strong>Custom AdminSite</strong> (<code>ExtracaoAdminSite</code>) com branding e ordenação de sidebar.</td><td><code>ExtracaoAdminSite</code>, <code>admin_site.py</code></td></tr>
+</table>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="fluxos" class="section">
+<h2>3. Fluxos de Execução <span class="badge badge-success">flows</span></h2>
+
+<h3>3.1 Upload de Documento</h3>
+<ol>
+<li>Usuário acessa <code>/documentos/novo/</code> → <code>DocumentoCreateView</code>.</li>
+<li>Arquivo enviado → armazenado no Supabase Storage (via storage backend).</li>
+<li>Registro <code>Documento</code> criado (status <code>PENDENTE</code>).</li>
+</ol>
+
+<h3>3.2 Extração (POST <code>/documentos/[pk]/extrair/</code>)</h3>
+<ol>
+<li><code>extrair_dados(documento_id)</code> em <code>llm_service/services.py</code>.</li>
+<li><strong>Pré‑processamento</strong> – escolha do <code>Preprocessor</code> conforme <code>formato_arquivo</code> (PDF, Imagem, XML).</li>
+<li><strong>Prompt</strong> – template <code>prompts/{tipo}.txt</code>.</li>
+<li><strong>Chamada LLM</strong> – <code>provider_factory.get_llm_provider()</code> retorna <code>APIProvider</code> (NVIDIA) ou <code>OllamaProvider</code>.</li>
+<li><strong>Validação de schema</strong> – Pydantic (<code>validacao_schema.validate_extraction</code>) + retry (máx 2).</li>
+<li><strong>Conversão monetária</strong> – <code>convert_monetary_fields</code> (Decimal → string).</li>
+<li><strong>Persistência</strong> – cria <code>DadosExtraidos</code> (JSONField + metadados LLM).</li>
+</ol>
+
+<h3>3.3 Validação Humana</h3>
+<ol>
+<li>Lista em <code>/validacao/</code> (<code>ValidacaoQueueView</code>).</li>
+<li>Detalhe lado‑a‑lado em <code>/validacao/[pk]/</code> (<code>ValidacaoDetailView</code>) – preview do arquivo + campos editáveis.</li>
+<li>Ação <strong>Aprovar</strong> → cria <code>LancamentoPreparado</code> (obrigatórios: documento, origem, data).</li>
+<li>Ação <strong>Rejeitar</strong> → registra <code>ValidacaoLog</code> com decisão.</li>
+</ol>
+
+<h3>3.4 Exportação CSV</h3>
+<p><code>/dashboard/exportar-csv/</code> (<code>ExportCSVView</code>) – exporta apenas lançamentos com <code>status_exportacao = PENDENTE</code>, marca como <code>EXPORTADO</code>.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="relacoes" class="section">
+<h2>4. Relações entre Arquivos <span class="badge badge-warning">files</span></h2>
+
+<div class="mermaid">
+flowchart LR
+  A[settings.py] --> B[urls.py]
+  B --> C[admin_site.py]
+  C --> D[apps.py]
+  E[usuarios_models] --> F[usuarios_admin]
+  G[documentos_models] --> H[documentos_admin]
+  I[validacao_models] --> J[validacao_admin]
+  K[llm_service_models] --> L[llm_service_admin]
+  C --> F
+  C --> H
+  C --> J
+  C --> L
+</div>
+
+<ul>
+<li><code>config/admin_site.py</code> instancia <code>ExtracaoAdminSite</code> e registra **todos** os <code>ModelAdmin</code> (sem usar <code>@admin.register</code>).</li>
+<li><code>config/urls.py</code> usa <code>admin_site.urls</code> → rota <code>/admin/</code>.</li>
+<li><code>llm_service/provider_factory.py</code> lê <code>LLM_PROVIDER</code> + <code>LLMConfig.get_active()</code> (fallback para <code>.env</code>).</li>
+<li>Templates:
+<ul>
+<li><code>templates/base.html</code> – layout principal (sidebar do projeto).</li>
+<li><code>templates/admin/base.html</code> – admin customizado (sem sidebar nativo, cards por app).</li>
+<li><code>templates/dashboard/</code> – index, ajuda.</li>
+</ul></li>
+<li>Static:
+<ul>
+<li><code>static/css/main.css</code> – UI do projeto.</li>
+<li><code>static/css/admin.css</code> – Design System do admin (cores, tipografia, componentes).</li>
+</ul></li>
+</ul>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="diagramas" class="section">
+<h2>5. Diagramas & Navegação <span class="badge badge-primary">diagrams</span></h2>
+
+<h3>5.1 Navegação Principal (Sidebar do Projeto)</h3>
+<div class="mermaid">
+flowchart TD
+  Dashboard["Dashboard"]
+  Upload["Upload"]
+  Docs["Documentos"]
+  Validacao["Validacao"]
+  ConfigLLM["Config LLM"]
+  Ajuda["Ajuda"]
+  Admin["Admin"]
+  Dashboard --> Upload
+  Dashboard --> Docs
+  Dashboard --> Validacao
+  Dashboard --> ConfigLLM
+  Dashboard --> Ajuda
+  Admin --> Dashboard
+</div>
+
+<h3>5.2 Fluxo de Extração (Detalhado)</h3>
+<div class="mermaid">
+sequenceDiagram
+  participant U as Usuario
+  participant V as View_extrair_dados
+  participant P as Preprocessor
+  participant L as LLM_Provider
+  participant S as Schema_Validator
+  participant D as DB_DadosExtraidos
+  U->>V: POST /documentos/[pk]/extrair/
+  V->>P: preprocess(file_bytes)
+  P-->>V: {content, is_multimodal}
+  V->>L: extrair(content, prompt, schema, is_multimodal)
+  L-->>V: raw_json
+  V->>S: validate_extraction(tipo, raw_json)
+  alt valido
+    S-->>V: dict validado
+    V->>D: CREATE DadosExtraidos
+  else
+    V->>L: re-enviar com erro
+  end
+  V-->>U: redirect -> detail
+</div>
+
+<h3>5.3 Modelo de Dados (Simplificado)</h3>
+<div class="mermaid">
+flowchart LR
+  Usuario --> Documento
+  Documento --> DadosExtraidos
+  Documento --> ValidacaoLog
+  Documento --> LancamentoPreparado
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="deploy" class="section">
+<h2>6. Deploy & Configuração de Produção <span class="badge badge-danger">deploy</span></h2>
+
+<h3>Variáveis de Ambiente (Vercel → Settings → Environment Variables)</h3>
+<pre><code>LLM_PROVIDER=api
+LLM_API_KEY=<chave NVIDIA>
+LLM_MODEL=nvidia/nemotron-3-ultra-550b-a55b
+LLM_BASE_URL=https://integrate.api.nvidia.com/v1
+VISION_LLM_MODEL=meta/llama-3.2-90b-vision-instruct
+DATABASE_URL=postgresql://... (pooled)
+DATABASE_URL_UNPOOLED=postgresql://... (unpooled p/ migrate)
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service role key>
+SUPABASE_BUCKET_NAME=Via.extracao
+DJANGO_SECRET_KEY=<secret>
+DJANGO_ALLOWED_HOSTS=.vercel.app
+</code></pre>
+
+<h3>Build Command (vercel.json)</h3>
+<pre><code>"buildCommand": "python manage.py collectstatic --noinput"
+</code></pre>
+<p><strong>Migrações** rodam **manualmente** com <code>DATABASE_URL_UNPOOLED</code>:</p>
+<pre><code>DATABASE_URL_UNPOOLED=... python manage.py migrate
+</code></pre>
+
+<h3>Limitações Conhecidas</h3>
+<ul>
+<li>Timeout Vercel 300 s – extrações longas podem estourar (futuro: <code>maxDuration</code> no <code>vercel.json</code> plano Pro).</li>
+<li>Chart.js via CDN (<code>cdn.jsdelivr.net</code>) – em redes restritas, baixar local.</li>
+<li>Supabase exige <code>SERVICE_ROLE_KEY</code> (não anon key).</li>
+<li>Admin customizado – não usa <code>django.contrib.admin</code> padrão; mudanças em <code>config/admin_site.py</code> + <code>templates/admin/</code>.</li>
+<li>XML NF‑e – <code>XMLPreprocessor</code> tenta <code>lxml</code> e cai para <code>xml.etree</code> (stdlib).</li>
+</ul>
+
+</section>
+
+<!-- ============================================================ -->
+<section id="testes" class="section">
+<h2>7. Testes <span class="badge badge-secondary">tests</span></h2>
+
+<pre><code># Rodar todos os testes (mocks LLM/storage)
+venv/bin/pytest tests/ -v
+
+# Apenas testes do llm_service
+venv/bin/pytest tests/test_llm_service.py -v
+</code></pre>
+
+<p>20 testes passando (models + llm_service). Mocks utilizados:</p>
+<ul>
+<li><code>MockProvider</code> – simula resposta do LLM.</li>
+<li><code>MockStorage</code> – evita escrita real no Supabase.</li>
+</ul>
+
+</section>
+
+<hr>
+<footer style="text-align:center;color:#666;margin-top:4rem;font-size:.9rem">
+  Documentação gerada automaticamente – Extracao2 – 2026‑07‑24
+</footer>
+</body>
+</html>
