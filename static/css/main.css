@@ -296,28 +296,48 @@ a.sidebar-link.active:focus {
 }
 
 /* Mobile responsive */
+@media (max-width: 1199.98px) {
+    /* Large tablets / small laptops */
+    :root {
+        --sidebar-width: 240px;
+    }
+    
+    .main-content {
+        padding: var(--space-lg);
+    }
+    
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 2rem;
+    }
+}
+
 @media (max-width: 991.98px) {
     .sidebar {
         transform: translateX(-100%);
     }
-
+    
     .sidebar.open {
         transform: translateX(0);
     }
-
-    .sidebar-toggle {
-        display: flex;
-    }
-
+    
     .main-wrapper {
         margin-left: 0 !important;
     }
-
+    
     .main-content {
         padding-left: 60px !important;
     }
-
-    /* Overlay when sidebar open on mobile */
+    
+    /* Sidebar toggle visible on tablet and mobile */
+    .sidebar-toggle {
+        display: flex;
+    }
+    
+    /* Overlay when sidebar open on mobile/tablet */
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -325,9 +345,135 @@ a.sidebar-link.active:focus {
         background: rgba(15, 25, 35, 0.5);
         z-index: 1035;
         backdrop-filter: blur(2px);
+        transition: opacity 0.3s ease;
     }
-    .sidebar.open ~ .sidebar-overlay {
+    .sidebar.open ~ .sidebar-overlay,
+    .sidebar-overlay.show {
         display: block;
+    }
+    
+    /* Stack validation layout */
+    .validation-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 767.98px) {
+    :root {
+        --sidebar-width: 280px;
+    }
+    
+    .main-content {
+        padding: var(--space-md);
+    }
+    
+    .page-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: var(--space-md);
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .page-header .d-flex {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    /* Stack stat cards */
+    .stat-card {
+        margin-bottom: var(--space-md);
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.75rem;
+    }
+    
+    /* Tables horizontal scroll */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table {
+        min-width: 600px;
+    }
+    
+    /* Validation layout stacked */
+    .validation-panel-body {
+        padding: var(--space-md);
+    }
+    
+    .validation-panel-header {
+        padding: var(--space-sm) var(--space-md);
+        font-size: 0.9375rem;
+    }
+    
+    /* PDF viewer responsive */
+    #pdf-viewer {
+        height: auto !important;
+        min-height: 300px;
+        max-height: 60vh;
+    }
+    
+    #pdf-pages canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* Login card */
+    .login-card {
+        margin: var(--space-md);
+        max-width: calc(100% - 2rem);
+    }
+    
+    .login-card .card-body {
+        padding: var(--space-lg);
+    }
+    
+    /* Buttons full width on very small screens */
+    @media (max-width: 400px) {
+        .btn {
+            width: 100%;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .d-flex.gap-2 {
+            flex-direction: column;
+        }
+        
+        .d-flex.gap-2 .btn {
+            margin-bottom: var(--space-sm);
+        }
+    }
+}
+
+/* Small tablets - between mobile and desktop */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .main-wrapper {
+        margin-left: 0;
+    }
+    
+    .main-content {
+        padding-left: var(--space-xl);
+    }
+    
+    /* Two column validation but smaller */
+    .validation-layout {
+        gap: var(--space-lg);
+    }
+    
+    .validation-panel-header {
+        font-size: 0.875rem;
+        padding: var(--space-sm) var(--space-md);
+    }
+    
+    /* PDF viewer medium */
+    #pdf-viewer {
+        height: 450px;
     }
 }
 

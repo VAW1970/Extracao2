@@ -59,7 +59,7 @@ class OllamaProvider(LLMProviderBase):
         }
 
         try:
-            with httpx.Client(timeout=120.0) as client:
+            with httpx.Client(timeout=300.0) as client:
                 response = client.post(
                     f"{self.host}/api/chat",
                     json=payload,

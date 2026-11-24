@@ -107,8 +107,9 @@ def get_llm_provider(testing: bool = False) -> LLMProviderBase:
 
     elif provider_type == "api":
         # Use DB config if available, otherwise env vars.
-        if db_config and db_config.is_configured and db_config.api_key:
-            api_key = db_config.api_key
+        if db_config and db_config.is_configured:
+            # Use DB config for model and base_url; api_key can come from DB or env var
+            api_key = db_config.api_key or settings.LLM_API_KEY
             model = db_config.api_model
             base_url = db_config.api_base_url
         else:

@@ -37,7 +37,7 @@ class LLMConfigForm(forms.ModelForm):
             "timeout_seconds",
         ]
         widgets = {
-            "provider": forms.Select(attrs={"class": "form-select", "id": "provider-select"}),
+            "provider": forms.HiddenInput(attrs={"id": "provider-select"}),
             "ollama_host": forms.URLInput(
                 attrs={"class": "form-control", "placeholder": "http://localhost:11434"}
             ),

@@ -5,9 +5,10 @@ Root URL configuration for extracao_contabil project.
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponseRedirect
-from django.urls import include, path
+from django.urls import include, path, re_path
 
 from .admin_site import admin_site
+from .media_views import serve_media
 
 
 def views_dashboard_redirect(request):
@@ -30,3 +31,12 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Serve media files in production (custom view without DEBUG check)
+urlpatterns += [
+    re_path(
+        r"^media/(?P<path>.*)$",
+        serve_media,
+        {"document_root": settings.MEDIA_ROOT},
+    ),
+]

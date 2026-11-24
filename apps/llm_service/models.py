@@ -131,12 +131,18 @@ class LLMConfig(models.Model):
 
         # Sync API config with env vars if DB has stale/empty values
         if config.provider == cls.ProviderChoice.API:
-            if not config.api_base_url or config.api_base_url == "https://api.groq.com/openai/v1":
+            # Only overwrite if values are empty or are NVIDIA defaults (not user-configured Groq values)
+            nvidia_defaults = {
+                "api_base_url": "https://integrate.api.nvidia.com/v1",
+                "api_model": "nvidia/nemotron-3-ultra-550b-a55b",
+                "api_provider_name": "nvidia",
+            }
+            if not config.api_base_url or config.api_base_url == nvidia_defaults["api_base_url"]:
                 config.api_base_url = getattr(settings, "LLM_BASE_URL", config.api_base_url)
-            if not config.api_model or config.api_model in ("llama-3.3-70b-versatile", "meta/llama-3.3-70b-instruct"):
+            if not config.api_model or config.api_model == nvidia_defaults["api_model"]:
                 config.api_model = getattr(settings, "LLM_MODEL", config.api_model)
-            if not config.api_provider_name or config.api_provider_name == "groq":
-                config.api_provider_name = "nvidia"
+            if not config.api_provider_name or config.api_provider_name == nvidia_defaults["api_provider_name"]:
+                config.api_provider_name = getattr(settings, "LLM_PROVIDER_NAME", "groq")
         return config
 
     def save(self, *args, **kwargs) -> None:

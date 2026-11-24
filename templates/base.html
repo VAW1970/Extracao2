@@ -117,7 +117,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <!-- Mobile sidebar toggle -->
-    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Abrir menu">
         <i class="bi bi-list"></i>
     </button>
     {% endif %}
@@ -169,15 +169,33 @@
     // ── Sidebar Toggle (mobile) ──
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
         sidebar.classList.toggle('open');
+        if (overlay) {
+            overlay.classList.toggle('show');
+        }
     }
 
     // Close sidebar on outside click (mobile)
     document.addEventListener('click', function(e) {
         const sidebar = document.getElementById('sidebar');
         const toggle = document.getElementById('sidebarToggle');
+        const overlay = document.getElementById('sidebarOverlay');
         if (sidebar && toggle && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
             sidebar.classList.remove('open');
+            if (overlay) {
+                overlay.classList.remove('show');
+            }
+        }
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (window.innerWidth > 991) {
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('show');
         }
     });
     </script>

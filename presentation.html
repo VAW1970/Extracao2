@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano Estratégico: Consultoria de IA Contábil</title>
+    <style>
+        /* --- Estilos Modernos e Limpos --- */
+        :root {
+            --primary-color: #007bff; /* Azul forte, para destaque */
+            --secondary-color: #6c757d; /* Cinza para texto secundário */
+            --background-color: #f8f9fa; /* Fundo claro e limpo */
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: #343a40;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #495057;
+            border-left: 5px solid var(--primary-color);
+            padding-left: 10px;
+            margin-top: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        /* Estilo para Cards de Cenários */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #f1f8ff; /* Um azul muito claro */
+            border: 1px solid var(--primary-color);
+            padding: 20px;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 123, 255, 0.1);
+        }
+
+        /* Estilo para o Fluxo de Arquitetura */
+        .flow-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 15px;
+            background-color: #e6f7ff;
+            border-radius: 8px;
+        }
+
+        .flow-box {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-right: 2px dashed var(--border-color);
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: var(--primary-color);
+            margin: 0 15px;
+        }
+
+        /* Estilo para Tabela de Infraestrutura */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Plano Estratégico: IA no Mercado Contábil</h1>
+        <p style="font-size: 1.2em; color: var(--secondary-color); margin-bottom: 30px;">Da Consultoria à Plataforma: Construindo Soluções de Alto Valor.</p>
+
+        <!-- SEÇÃO 1: Visão e Estratégia -->
+        <div class="section">
+            <h2>1. Visão Estratégica</h2>
+            <p>A estratégia é utilizar a IA não apenas para automação, mas para **agregar conhecimento** ao processo contábil.</p>
+            <ul>
+                <li><strong>Foco Inicial (MVP):</strong> Consultoria de implementação interna e validação de processos (B2B).</li>
+                <li><strong>Estratégia Futura:</strong> Desenvolver um Produto SaaS que empodere o cliente final com ferramentas inteligentes.</li>
+                <li><strong>Proposta de Valor Única:</strong> Não vendemos código, vendemos **precisão fiscal** e **otimização de tempo** através da IA.</li>
+            </ul>
+        </div>
+
+        <!-- SEÇÃO 2: O Core da IA (Agregador de Valor) -->
+        <div class="section">
+            <h2>2. A Agregação de Valor da IA</h2>
+            <p>O LLM não deve ser apenas um extrator; ele deve ser um **Consultor Cognitivo**.</p>
+            <div class="flow-container">
+                <div class="flow-box">📄 Documentos Originais</div>
+                <div class="arrow">&rarr;</div>
+                <div class="flow-box">🧠 LLM + RAG (Conhecimento Contábil)</div>
+                <div class="arrow">&rarr;</div>
+                <div class="flow-box">💡 Recomendações e Relatórios</div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 3: Arquitetura Desacoplada -->
+        <div class="section">
+            <h2>3. Arquitetura Essencial</h2>
+            <p>A chave para a escalabilidade é o **Padrão de Provedor (Provider Pattern)**, que garante flexibilidade.</p>
+            <table style="width: 100%;">
+                <tr>
+                    <td style="width: 50%; padding: 10px; border: 1px solid var(--border-color);"><strong>Interface Base:</strong></td>
+                    <td><code>LLMProviderBase</code> (Contrato Comum)</td>
+                </tr>
+                <tr>
+                    <td style="width: 50%; padding: 10px; border: 1px solid var(--border-color);"><strong>Implementações:</strong></td>
+                    <td><code>OllamaProvider</code> (Local/Seguro) & <code>APIProvider</code> (Flexível/Escalável).</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- SEÇÃO 4: Cenários de Infraestrutura -->
+        <div class="section">
+            <h2>4. Estratégia de Infraestrutura</h2>
+            <p>A infraestrutura deve evoluir com a necessidade do negócio.</p>
+            <div class="scenario-grid">
+                
+                <div class="card">
+                    <h3>📦 Mínimo Viável (MVP)</h3>
+                    <p>Foco: Validação da Arquitetura e Segurança Interna.</p>
+                    <ul>
+                        <li><strong>Máquina:</strong> Notebook/PC (16GB RAM, SSD NVMe).</li>
+                        <li><strong>LLM:</strong> Ollama Local.</li>
+                        <li><strong>DB:</strong> SQLite.</li>
+                        <li><strong>Objetivo:</strong> Construir e validar o fluxo de extração com segurança.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3>🚀 Ideal (Escala SaaS)</h3>
+                    <p>Foco: Escalabilidade, RAG Avançado e Custo-Benefício.</p>
+                    <ul>
+                        <li><strong>Máquina:</strong> Servidor Cloud com GPU NVIDIA.</li>
+                        <li><strong>DB:</strong> PostgreSQL + Vector DB.</li>
+                        <li><strong>LLM:</strong> Híbrido (Ollama + API).</li>
+                        <li><strong>Objetivo:</strong> Construir um produto escalável, seguro e otimizado para o mercado externo.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

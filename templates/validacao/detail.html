@@ -91,6 +91,9 @@
                                 canvas.style.display = 'block';
                                 canvas.style.margin = '0 auto 8px auto';
                                 canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+                                // Make canvas responsive
+                                canvas.style.maxWidth = '100%';
+                                canvas.style.height = 'auto';
                                 const ctx = canvas.getContext('2d');
                                 canvas.height = viewport.height;
                                 canvas.width = viewport.width;
